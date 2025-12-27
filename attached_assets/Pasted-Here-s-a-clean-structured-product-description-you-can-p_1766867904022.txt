@@ -1,0 +1,126 @@
+Here’s a clean, structured product description you can paste directly into Relit (or any system prompt) so you don’t have to keep re-explaining requirements. I’ve rewritten it as a clear app specification with precise scope and logic.
+
+⸻
+
+Lesson Planning & Gymnastics Training App – Product Requirements
+
+App Purpose
+
+Build a comprehensive gymnastics lesson planning and training management app designed for competitive gymnastics programs. The app supports individualized and group planning, skill tracking, goal setting, and routine construction while aligning with competitive rulesets.
+
+⸻
+
+Core Features
+
+1. Athlete Profile Management
+	•	Input gymnast full name
+	•	Select competitive level
+	•	Support all competitive systems:
+	•	USA Gymnastics (all levels)
+	•	NGA (all levels)
+	•	AAU (all levels)
+
+⸻
+
+2. Practice Scheduling & Time Allocation
+	•	Create practice plans for any day Monday–Sunday
+	•	Assign event training time in 15-minute increments
+	•	Events supported:
+	•	Vault
+	•	Bars
+	•	Beam
+	•	Floor
+	•	App should analyze total practice time and selected skills and:
+	•	Recommend optimal time distribution per event
+	•	Adjust suggestions based on skill volume and difficulty
+
+⸻
+
+3. Skill Bank System
+	•	Create a Skill Bank for each event:
+	•	Vault
+	•	Bars
+	•	Beam
+	•	Floor
+	•	Each skill includes:
+	•	Skill name
+	•	Skill value (A–I)
+	•	Event association
+	•	Skills can be selected from the bank and assigned to:
+	•	Daily practice plans
+	•	Long-term goals
+	•	Routine construction
+
+⸻
+
+4. Goal Setting & Tracking
+	•	Set goals for:
+	•	Individual gymnast
+	•	Groups or teams
+	•	Goal timeframes:
+	•	Daily
+	•	Weekly
+	•	Monthly
+	•	Quarterly
+	•	Yearly
+	•	Goals can be linked to:
+	•	Specific skills
+	•	Events
+	•	Routines
+
+⸻
+
+5. Routine Builder
+	•	Dedicated area to build competitive routines
+	•	Select skills from the skill bank
+	•	Assign skills in sequence
+	•	App evaluates routine structure and requirements
+
+⸻
+
+6. Rules Engine & Start Value Calculator (Elite Focus)
+	•	Input and store competition rules
+	•	Use stored rules to calculate start values
+	•	Elite routine logic:
+	•	Composition Requirements (CR) total = 2.0
+	•	Connection Value (CV) applies bonus based on connected skills
+	•	Skill value mapping:
+	•	A = 0.1
+	•	B = 0.2
+	•	C = 0.3
+	•	D = 0.4
+	•	E = 0.5
+	•	F = 0.6
+	•	G = 0.7
+	•	H = 0.8
+	•	App automatically:
+	•	Confirms CR fulfillment
+	•	Calculates CV bonuses
+	•	Outputs final start value
+
+⸻
+
+7. Export & Reporting
+	•	Export lesson plans, goals, routines, and schedules to:
+	•	PDF
+	•	Excel
+	•	CSV
+	•	Word
+	•	Exports should support:
+	•	Individual gymnast plans
+	•	Group or team plans
+	•	Weekly or long-term views
+
+⸻
+
+Summary
+
+This app serves as a smart gymnastics planning system that combines lesson planning, skill tracking, routine construction, goal management, and automated scoring logic into one platform—optimized for coaches managing multiple athletes across multiple competitive systems.
+
+⸻
+
+If you want, I can next:
+	•	Convert this into a Relit system prompt
+	•	Break it into database models (tables & fields)
+	•	Translate it into Next.js + Supabase schema
+	•	Or turn it into a pitch deck / PRD for developers
