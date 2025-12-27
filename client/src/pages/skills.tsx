@@ -43,7 +43,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { Skill, InsertSkill } from "@shared/schema";
-import { EVENTS, SKILL_VALUES, SKILL_VALUE_MAP, getSkillNumericValue } from "@shared/schema";
+import { EVENTS, SKILL_VALUES, SKILL_VALUE_MAP, SKILL_GROUPS_BY_EVENT, getSkillNumericValue } from "@shared/schema";
 
 const formSchema = z.object({
   name: z.string().min(2, "Skill name must be at least 2 characters"),
@@ -51,6 +51,7 @@ const formSchema = z.object({
   event: z.enum(["Vault", "Bars", "Beam", "Floor"]),
   description: z.string().optional(),
   vaultValue: z.number().min(0).max(20).optional(),
+  skillGroup: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -85,6 +86,11 @@ function SkillCard({
             <p className="text-xs text-muted-foreground font-mono">
               {isVault ? `Vault Value: ${numericValue.toFixed(2)}` : `Value: ${numericValue.toFixed(1)}`}
             </p>
+            {skill.skillGroup && (
+              <Badge variant="outline" className="mt-1 text-xs">
+                {skill.skillGroup}
+              </Badge>
+            )}
             {skill.description && (
               <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
                 {skill.description}
@@ -132,6 +138,7 @@ export default function Skills() {
       event: "Vault",
       description: "",
       vaultValue: 10.0,
+      skillGroup: "",
     },
   });
 
@@ -186,6 +193,7 @@ export default function Skills() {
       ...data,
       description: data.description || null,
       vaultValue: data.event === "Vault" ? (data.vaultValue || 10.0) : null,
+      skillGroup: data.event !== "Vault" && data.skillGroup && data.skillGroup !== "none" ? data.skillGroup : null,
     };
     if (editingSkill) {
       updateMutation.mutate({ id: editingSkill.id, data: submitData });
@@ -202,6 +210,7 @@ export default function Skills() {
       event: skill.event as FormData["event"],
       description: skill.description || "",
       vaultValue: skill.vaultValue || 10.0,
+      skillGroup: skill.skillGroup || "",
     });
     setIsDialogOpen(true);
   };
@@ -214,6 +223,7 @@ export default function Skills() {
       event: selectedEvent === "all" ? "Vault" : (selectedEvent as FormData["event"]),
       description: "",
       vaultValue: 10.0,
+      skillGroup: "",
     });
     setIsDialogOpen(true);
   };
@@ -321,30 +331,57 @@ export default function Skills() {
                     )}
                   />
                 ) : (
-                  <FormField
-                    control={form.control}
-                    name="value"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Skill Value (A-I)</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-skill-value">
-                              <SelectValue placeholder="Select value" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {SKILL_VALUES.map((value) => (
-                              <SelectItem key={value} value={value}>
-                                {value} ({SKILL_VALUE_MAP[value].toFixed(1)})
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <>
+                    <FormField
+                      control={form.control}
+                      name="value"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Skill Value (A-I)</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-skill-value">
+                                <SelectValue placeholder="Select value" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {SKILL_VALUES.map((value) => (
+                                <SelectItem key={value} value={value}>
+                                  {value} ({SKILL_VALUE_MAP[value].toFixed(1)})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="skillGroup"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Skill Group</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value || ""}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-skill-group">
+                                <SelectValue placeholder="Select group (optional)" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="none">No Group</SelectItem>
+                              {(SKILL_GROUPS_BY_EVENT[watchedEvent] || []).map((group) => (
+                                <SelectItem key={group} value={group}>
+                                  {group}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </>
                 )}
                 <FormField
                   control={form.control}
