@@ -243,6 +243,7 @@ export class MemStorage implements IStorage {
       startValue: insertRoutine.startValue || 0,
       crFulfilled: insertRoutine.crFulfilled || false,
       cvBonus: insertRoutine.cvBonus || 0,
+      groupBonus: insertRoutine.groupBonus || 0,
     };
     this.routines.set(id, routine);
     return routine;

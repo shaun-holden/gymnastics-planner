@@ -62,7 +62,10 @@ shared/
   - **Vault**: Uses direct numeric vault value
   - **Bars/Beam/Floor**: Counts only TOP 8 skills (highest values first)
     - Difficulty Value (DV) from top 8 skill values
-    - Composition Requirements (CR) = 2.0 when fulfilled
+    - Group Bonus = 0.5 per group (max 2.0 for all 4 groups)
+      - Bars groups: Mounts, Cast/Handstand, Release Moves, Dismounts
+      - Beam groups: Mounts, Acrobatic, Dance/Leaps, Dismounts
+      - Floor groups: Dance/Leaps, Forward Tumbling, Backward Tumbling, Dismounts
     - Connection Value (CV) bonus for consecutive C+ skills
 - Live preview of start value while building
 

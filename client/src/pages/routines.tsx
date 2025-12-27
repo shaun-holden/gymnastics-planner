@@ -43,7 +43,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { Routine, Skill, Athlete, InsertRoutine } from "@shared/schema";
-import { EVENTS, SKILL_VALUE_MAP, calculateStartValue, getSkillNumericValue } from "@shared/schema";
+import { EVENTS, SKILL_VALUE_MAP, SKILL_GROUPS_BY_EVENT, calculateStartValue, getSkillNumericValue } from "@shared/schema";
 
 function getSkillDisplayValue(skill: Skill): string {
   if (skill.event === "Vault" && skill.vaultValue !== null && skill.vaultValue !== undefined) {
@@ -62,8 +62,9 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 function StartValueCalculator({ skills, event }: { skills: Skill[]; event: string }) {
-  const { startValue, crFulfilled, cvBonus, topSkills } = calculateStartValue(skills, event);
+  const { startValue, crFulfilled, cvBonus, topSkills, groupBonus, groupsPresent } = calculateStartValue(skills, event);
   const isVault = event === "Vault";
+  const eventGroups = SKILL_GROUPS_BY_EVENT[event] || [];
 
   const difficultyValue = topSkills.reduce((sum, skill) => {
     return sum + getSkillNumericValue(skill);
@@ -104,16 +105,29 @@ function StartValueCalculator({ skills, event }: { skills: Skill[]; event: strin
             </p>
           )}
 
-          <div className="flex items-center justify-between p-3 rounded-md bg-muted/50">
-            <div className="flex items-center gap-2">
-              <span className="text-sm">Composition Requirements (CR)</span>
-              {crFulfilled ? (
-                <Badge variant="default" className="text-xs">Fulfilled</Badge>
-              ) : (
-                <Badge variant="secondary" className="text-xs">Partial</Badge>
-              )}
+          <div className="p-3 rounded-md bg-muted/50 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-sm">Group Bonus</span>
+                {crFulfilled ? (
+                  <Badge variant="default" className="text-xs">All 4 Groups</Badge>
+                ) : (
+                  <Badge variant="secondary" className="text-xs">{groupsPresent.length}/4 Groups</Badge>
+                )}
+              </div>
+              <span className="font-mono font-medium">+{groupBonus.toFixed(1)}</span>
             </div>
-            <span className="font-mono font-medium">{crFulfilled ? "2.0" : "..."}</span>
+            <div className="flex flex-wrap gap-1">
+              {eventGroups.map((group) => (
+                <Badge 
+                  key={group} 
+                  variant={groupsPresent.includes(group) ? "default" : "outline"}
+                  className="text-xs"
+                >
+                  {group}
+                </Badge>
+              ))}
+            </div>
           </div>
 
           <div className="flex items-center justify-between p-3 rounded-md bg-muted/50">
@@ -131,7 +145,7 @@ function StartValueCalculator({ skills, event }: { skills: Skill[]; event: strin
           </div>
 
           <p className="text-xs text-muted-foreground">
-            DV = Top 8 skills (highest first). CR = 2.0 when 4+ different values and 6+ skills. CV = 0.1 per consecutive C+ pair.
+            DV = Top 8 skills. Group Bonus = 0.5 per group (max 2.0). CV = 0.1 per consecutive C+ pair.
           </p>
         </div>
       )}
@@ -300,13 +314,14 @@ export default function Routines() {
   });
 
   const onSubmit = (data: FormData) => {
-    const { startValue, crFulfilled, cvBonus } = calculateStartValue(selectedSkills);
+    const { startValue, crFulfilled, cvBonus, groupBonus } = calculateStartValue(selectedSkills, data.event);
     const submitData = {
       ...data,
       skillIds: selectedSkillIds,
       startValue,
       crFulfilled,
       cvBonus,
+      groupBonus,
     };
     if (editingRoutine) {
       updateMutation.mutate({ id: editingRoutine.id, data: submitData });

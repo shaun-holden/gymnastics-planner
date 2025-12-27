@@ -127,8 +127,9 @@ export const routines = pgTable("routines", {
   event: text("event").notNull(),
   skillIds: text("skill_ids").array().notNull(), // Ordered array of skill IDs
   startValue: real("start_value").default(0),
-  crFulfilled: boolean("cr_fulfilled").default(false),
+  crFulfilled: boolean("cr_fulfilled").default(false), // True when all 4 groups are present
   cvBonus: real("cv_bonus").default(0),
+  groupBonus: real("group_bonus").default(0), // 0.5 per group, max 2.0
 });
 
 export const insertRoutineSchema = createInsertSchema(routines).omit({ id: true });
