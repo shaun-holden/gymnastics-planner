@@ -130,7 +130,12 @@ export class MemStorage implements IStorage {
 
   async createSkill(insertSkill: InsertSkill): Promise<Skill> {
     const id = randomUUID();
-    const skill: Skill = { ...insertSkill, id, description: insertSkill.description || null };
+    const skill: Skill = {
+      ...insertSkill,
+      id,
+      description: insertSkill.description || null,
+      vaultValue: insertSkill.vaultValue ?? null,
+    };
     this.skills.set(id, skill);
     return skill;
   }

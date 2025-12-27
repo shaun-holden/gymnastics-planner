@@ -43,13 +43,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { Skill, InsertSkill } from "@shared/schema";
-import { EVENTS, SKILL_VALUES, SKILL_VALUE_MAP } from "@shared/schema";
+import { EVENTS, SKILL_VALUES, SKILL_VALUE_MAP, getSkillNumericValue } from "@shared/schema";
 
 const formSchema = z.object({
   name: z.string().min(2, "Skill name must be at least 2 characters"),
   value: z.enum(["A", "B", "C", "D", "E", "F", "G", "H", "I"]),
   event: z.enum(["Vault", "Bars", "Beam", "Floor"]),
   description: z.string().optional(),
+  vaultValue: z.number().min(0).max(20).optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -63,8 +64,9 @@ function SkillCard({
   onEdit: (skill: Skill) => void;
   onDelete: (id: string) => void;
 }) {
-  const valueNum = SKILL_VALUE_MAP[skill.value as keyof typeof SKILL_VALUE_MAP];
-  const isHighValue = valueNum >= 0.4;
+  const isVault = skill.event === "Vault";
+  const numericValue = getSkillNumericValue(skill);
+  const isHighValue = isVault ? numericValue >= 10.0 : numericValue >= 0.4;
 
   return (
     <Card className="hover-elevate" data-testid={`skill-card-${skill.id}`}>
@@ -77,11 +79,11 @@ function SkillCard({
                 variant={isHighValue ? "default" : "secondary"}
                 className="shrink-0"
               >
-                {skill.value}
+                {isVault ? numericValue.toFixed(1) : skill.value}
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground font-mono">
-              Value: {valueNum.toFixed(1)}
+              {isVault ? `Vault Value: ${numericValue.toFixed(2)}` : `Value: ${numericValue.toFixed(1)}`}
             </p>
             {skill.description && (
               <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
@@ -129,8 +131,12 @@ export default function Skills() {
       value: "A",
       event: "Vault",
       description: "",
+      vaultValue: 10.0,
     },
   });
+
+  const watchedEvent = form.watch("event");
+  const isVaultEvent = watchedEvent === "Vault";
 
   const { data: skills, isLoading } = useQuery<Skill[]>({
     queryKey: ["/api/skills"],
@@ -176,7 +182,11 @@ export default function Skills() {
   });
 
   const onSubmit = (data: FormData) => {
-    const submitData = { ...data, description: data.description || null };
+    const submitData = {
+      ...data,
+      description: data.description || null,
+      vaultValue: data.event === "Vault" ? (data.vaultValue || 10.0) : null,
+    };
     if (editingSkill) {
       updateMutation.mutate({ id: editingSkill.id, data: submitData });
     } else {
@@ -191,6 +201,7 @@ export default function Skills() {
       value: skill.value as FormData["value"],
       event: skill.event as FormData["event"],
       description: skill.description || "",
+      vaultValue: skill.vaultValue || 10.0,
     });
     setIsDialogOpen(true);
   };
@@ -202,14 +213,17 @@ export default function Skills() {
       value: "A",
       event: selectedEvent === "all" ? "Vault" : (selectedEvent as FormData["event"]),
       description: "",
+      vaultValue: 10.0,
     });
     setIsDialogOpen(true);
   };
 
   const filteredSkills = skills?.filter((skill) => {
+    const numericValue = getSkillNumericValue(skill);
     const matchesSearch =
       skill.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      skill.value.toLowerCase().includes(searchQuery.toLowerCase());
+      skill.value.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      numericValue.toString().includes(searchQuery);
     const matchesEvent = selectedEvent === "all" || skill.event === selectedEvent;
     return matchesSearch && matchesEvent;
   });
@@ -282,30 +296,56 @@ export default function Skills() {
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
-                  name="value"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Skill Value (A-I)</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                {isVaultEvent ? (
+                  <FormField
+                    control={form.control}
+                    name="vaultValue"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Vault Value (Start Value)</FormLabel>
                         <FormControl>
-                          <SelectTrigger data-testid="select-skill-value">
-                            <SelectValue placeholder="Select value" />
-                          </SelectTrigger>
+                          <Input
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            max="20"
+                            placeholder="e.g., 10.0"
+                            {...field}
+                            value={field.value || 10.0}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                            data-testid="input-vault-value"
+                          />
                         </FormControl>
-                        <SelectContent>
-                          {SKILL_VALUES.map((value) => (
-                            <SelectItem key={value} value={value}>
-                              {value} ({SKILL_VALUE_MAP[value].toFixed(1)})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ) : (
+                  <FormField
+                    control={form.control}
+                    name="value"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Skill Value (A-I)</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-skill-value">
+                              <SelectValue placeholder="Select value" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {SKILL_VALUES.map((value) => (
+                              <SelectItem key={value} value={value}>
+                                {value} ({SKILL_VALUE_MAP[value].toFixed(1)})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
                 <FormField
                   control={form.control}
                   name="description"

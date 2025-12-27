@@ -47,7 +47,8 @@ shared/
 
 ### 2. Skill Bank
 - Organize skills by event: Vault, Bars, Beam, Floor
-- Skill values: A-I (0.1 - 0.9)
+- Vault skills: Use numeric start values (e.g., 10.0, 9.8)
+- Bars/Beam/Floor skills: Use A-I letter values (0.1 - 0.9)
 - Search and filter capabilities
 
 ### 3. Practice Planning
@@ -58,9 +59,11 @@ shared/
 ### 4. Routine Builder
 - Build competitive routines from skill bank
 - Automatic Start Value calculation:
-  - Difficulty Value (DV) from skill values
-  - Composition Requirements (CR) = 2.0 when fulfilled
-  - Connection Value (CV) bonus for consecutive C+ skills
+  - **Vault**: Uses direct numeric vault value
+  - **Bars/Beam/Floor**: Counts only TOP 8 skills (highest values first)
+    - Difficulty Value (DV) from top 8 skill values
+    - Composition Requirements (CR) = 2.0 when fulfilled
+    - Connection Value (CV) bonus for consecutive C+ skills
 - Live preview of start value while building
 
 ### 5. Goals

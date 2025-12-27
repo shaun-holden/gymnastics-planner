@@ -51,14 +51,23 @@ export type Athlete = typeof athletes.$inferSelect;
 export const skills = pgTable("skills", {
   id: varchar("id").primaryKey(),
   name: text("name").notNull(),
-  value: text("value").notNull(), // A-I
+  value: text("value").notNull(), // A-I for Bars/Beam/Floor, or numeric string for Vault
   event: text("event").notNull(), // Vault, Bars, Beam, Floor
   description: text("description"),
+  vaultValue: real("vault_value"), // Numeric value for vault skills (e.g., 10.0)
 });
 
 export const insertSkillSchema = createInsertSchema(skills).omit({ id: true });
 export type InsertSkill = z.infer<typeof insertSkillSchema>;
 export type Skill = typeof skills.$inferSelect;
+
+// Get numeric value for a skill (handles both vault and apparatus)
+export function getSkillNumericValue(skill: Skill): number {
+  if (skill.event === "Vault" && skill.vaultValue !== null && skill.vaultValue !== undefined) {
+    return skill.vaultValue;
+  }
+  return SKILL_VALUE_MAP[skill.value as SkillValue] || 0;
+}
 
 // Practice Plans Table
 export const practices = pgTable("practices", {
@@ -121,24 +130,48 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
 // Helper function to calculate start value
-export function calculateStartValue(skills: Skill[]): { startValue: number; crFulfilled: boolean; cvBonus: number } {
+// For Vault: uses the vault's numeric value directly
+// For Bars/Beam/Floor: counts only TOP 8 skills (highest values first)
+export function calculateStartValue(skills: Skill[], event?: string): { startValue: number; crFulfilled: boolean; cvBonus: number; topSkills: Skill[] } {
   if (skills.length === 0) {
-    return { startValue: 0, crFulfilled: false, cvBonus: 0 };
+    return { startValue: 0, crFulfilled: false, cvBonus: 0, topSkills: [] };
   }
 
-  // Calculate difficulty value (DV) from skill values
-  const difficultyValue = skills.reduce((sum, skill) => {
+  // For Vault, just return the vault value directly
+  if (event === "Vault" || (skills.length > 0 && skills[0].event === "Vault")) {
+    const vaultSkill = skills[0];
+    const vaultValue = vaultSkill.vaultValue || 0;
+    return {
+      startValue: vaultValue,
+      crFulfilled: false,
+      cvBonus: 0,
+      topSkills: skills,
+    };
+  }
+
+  // For Bars/Beam/Floor: Sort by value and take top 8
+  const sortedSkills = [...skills].sort((a, b) => {
+    const valueA = SKILL_VALUE_MAP[a.value as SkillValue] || 0;
+    const valueB = SKILL_VALUE_MAP[b.value as SkillValue] || 0;
+    return valueB - valueA; // Descending order (highest first)
+  });
+
+  const topSkills = sortedSkills.slice(0, 8);
+
+  // Calculate difficulty value (DV) from top 8 skills only
+  const difficultyValue = topSkills.reduce((sum, skill) => {
     return sum + (SKILL_VALUE_MAP[skill.value as SkillValue] || 0);
   }, 0);
 
   // CR (Composition Requirements) = 2.0 for elite routines
   // For simplicity, we'll assume CR is fulfilled if there are at least 4 different value skills
-  const uniqueValues = new Set(skills.map(s => s.value));
-  const crFulfilled = uniqueValues.size >= 4 && skills.length >= 6;
+  const uniqueValues = new Set(topSkills.map(s => s.value));
+  const crFulfilled = uniqueValues.size >= 4 && topSkills.length >= 6;
   const crValue = crFulfilled ? 2.0 : Math.min(uniqueValues.size * 0.5, 2.0);
 
   // CV (Connection Value) - bonus for connected skills
   // Simplified: give 0.1 bonus for each consecutive pair of C+ skills
+  // Use original skill order for connection value
   let cvBonus = 0;
   for (let i = 0; i < skills.length - 1; i++) {
     const currentValue = SKILL_VALUE_MAP[skills[i].value as SkillValue] || 0;
@@ -154,5 +187,6 @@ export function calculateStartValue(skills: Skill[]): { startValue: number; crFu
     startValue: Math.round(startValue * 100) / 100,
     crFulfilled,
     cvBonus: Math.round(cvBonus * 100) / 100,
+    topSkills,
   };
 }

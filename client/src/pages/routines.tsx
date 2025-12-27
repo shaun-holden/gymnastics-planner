@@ -43,7 +43,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { Routine, Skill, Athlete, InsertRoutine } from "@shared/schema";
-import { EVENTS, SKILL_VALUE_MAP, calculateStartValue } from "@shared/schema";
+import { EVENTS, SKILL_VALUE_MAP, calculateStartValue, getSkillNumericValue } from "@shared/schema";
+
+function getSkillDisplayValue(skill: Skill): string {
+  if (skill.event === "Vault" && skill.vaultValue !== null && skill.vaultValue !== undefined) {
+    return skill.vaultValue.toFixed(1);
+  }
+  return skill.value;
+}
 
 const formSchema = z.object({
   name: z.string().min(2, "Routine name is required"),
@@ -54,11 +61,12 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-function StartValueCalculator({ skills }: { skills: Skill[] }) {
-  const { startValue, crFulfilled, cvBonus } = calculateStartValue(skills);
+function StartValueCalculator({ skills, event }: { skills: Skill[]; event: string }) {
+  const { startValue, crFulfilled, cvBonus, topSkills } = calculateStartValue(skills, event);
+  const isVault = event === "Vault";
 
-  const difficultyValue = skills.reduce((sum, skill) => {
-    return sum + (SKILL_VALUE_MAP[skill.value as keyof typeof SKILL_VALUE_MAP] || 0);
+  const difficultyValue = topSkills.reduce((sum, skill) => {
+    return sum + getSkillNumericValue(skill);
   }, 0);
 
   return (
@@ -68,42 +76,65 @@ function StartValueCalculator({ skills }: { skills: Skill[] }) {
         <h3 className="font-semibold">Start Value Calculator</h3>
       </div>
 
-      <div className="space-y-3">
-        <div className="flex items-center justify-between p-3 rounded-md bg-muted/50">
-          <span className="text-sm">Difficulty Value (DV)</span>
-          <span className="font-mono font-medium">{difficultyValue.toFixed(1)}</span>
-        </div>
-
-        <div className="flex items-center justify-between p-3 rounded-md bg-muted/50">
-          <div className="flex items-center gap-2">
-            <span className="text-sm">Composition Requirements (CR)</span>
-            {crFulfilled ? (
-              <Badge variant="default" className="text-xs">Fulfilled</Badge>
-            ) : (
-              <Badge variant="secondary" className="text-xs">Partial</Badge>
-            )}
+      {isVault ? (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between p-4 rounded-md bg-primary/10">
+            <span className="font-semibold">Vault Start Value</span>
+            <span className="text-2xl font-mono font-bold text-primary">
+              {startValue.toFixed(2)}
+            </span>
           </div>
-          <span className="font-mono font-medium">{crFulfilled ? "2.0" : "..."}</span>
+          <p className="text-xs text-muted-foreground">
+            Vault uses a direct numeric start value.
+          </p>
         </div>
+      ) : (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between p-3 rounded-md bg-muted/50">
+            <div className="flex items-center gap-2">
+              <span className="text-sm">Difficulty Value (DV)</span>
+              <Badge variant="outline" className="text-xs">Top 8 Skills</Badge>
+            </div>
+            <span className="font-mono font-medium">{difficultyValue.toFixed(1)}</span>
+          </div>
 
-        <div className="flex items-center justify-between p-3 rounded-md bg-muted/50">
-          <span className="text-sm">Connection Value (CV)</span>
-          <span className="font-mono font-medium">+{cvBonus.toFixed(1)}</span>
+          {skills.length > 8 && (
+            <p className="text-xs text-muted-foreground">
+              Counting top 8 of {skills.length} skills (highest values first)
+            </p>
+          )}
+
+          <div className="flex items-center justify-between p-3 rounded-md bg-muted/50">
+            <div className="flex items-center gap-2">
+              <span className="text-sm">Composition Requirements (CR)</span>
+              {crFulfilled ? (
+                <Badge variant="default" className="text-xs">Fulfilled</Badge>
+              ) : (
+                <Badge variant="secondary" className="text-xs">Partial</Badge>
+              )}
+            </div>
+            <span className="font-mono font-medium">{crFulfilled ? "2.0" : "..."}</span>
+          </div>
+
+          <div className="flex items-center justify-between p-3 rounded-md bg-muted/50">
+            <span className="text-sm">Connection Value (CV)</span>
+            <span className="font-mono font-medium">+{cvBonus.toFixed(1)}</span>
+          </div>
+
+          <Separator />
+
+          <div className="flex items-center justify-between p-4 rounded-md bg-primary/10">
+            <span className="font-semibold">Start Value</span>
+            <span className="text-2xl font-mono font-bold text-primary">
+              {startValue.toFixed(2)}
+            </span>
+          </div>
+
+          <p className="text-xs text-muted-foreground">
+            DV = Top 8 skills (highest first). CR = 2.0 when 4+ different values and 6+ skills. CV = 0.1 per consecutive C+ pair.
+          </p>
         </div>
-
-        <Separator />
-
-        <div className="flex items-center justify-between p-4 rounded-md bg-primary/10">
-          <span className="font-semibold">Start Value</span>
-          <span className="text-2xl font-mono font-bold text-primary">
-            {startValue.toFixed(2)}
-          </span>
-        </div>
-      </div>
-
-      <p className="text-xs text-muted-foreground">
-        CR = 2.0 when 4+ different skill values and 6+ skills. CV = 0.1 per consecutive C+ skill pair.
-      </p>
+      )}
     </div>
   );
 }
@@ -174,7 +205,7 @@ function RoutineCard({
           <div className="flex flex-wrap gap-1">
             {routineSkills.slice(0, 6).map((skill, idx) => (
               <Badge key={idx} variant="secondary" className="text-xs">
-                {skill.name} ({skill.value})
+                {skill.name} ({getSkillDisplayValue(skill)})
               </Badge>
             ))}
             {routineSkills.length > 6 && (
@@ -446,7 +477,7 @@ export default function Routines() {
                               >
                                 <div className="flex items-center gap-2">
                                   <Badge variant="secondary" className="text-xs">
-                                    {skill.value}
+                                    {getSkillDisplayValue(skill)}
                                   </Badge>
                                   <span className="text-sm">{skill.name}</span>
                                 </div>
@@ -487,7 +518,7 @@ export default function Routines() {
                                     {idx + 1}
                                   </span>
                                   <Badge variant="default" className="text-xs">
-                                    {skill.value}
+                                    {getSkillDisplayValue(skill)}
                                   </Badge>
                                   <span className="text-sm">{skill.name}</span>
                                 </div>
@@ -515,7 +546,7 @@ export default function Routines() {
                   {/* Start Value Calculator */}
                   <Card className="flex flex-col">
                     <CardContent className="p-4 flex-1">
-                      <StartValueCalculator skills={selectedSkills} />
+                      <StartValueCalculator skills={selectedSkills} event={selectedEvent} />
                     </CardContent>
                   </Card>
                 </div>
