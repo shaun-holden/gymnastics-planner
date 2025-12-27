@@ -135,6 +135,7 @@ export class MemStorage implements IStorage {
       id,
       description: insertSkill.description || null,
       vaultValue: insertSkill.vaultValue ?? null,
+      skillGroup: insertSkill.skillGroup ?? null,
     };
     this.skills.set(id, skill);
     return skill;

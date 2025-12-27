@@ -14,6 +14,22 @@ export type Event = typeof EVENTS[number];
 export const SKILL_VALUES = ["A", "B", "C", "D", "E", "F", "G", "H", "I"] as const;
 export type SkillValue = typeof SKILL_VALUES[number];
 
+// Skill Groups by Event (4 groups per event for Bars, Beam, Floor)
+export const BARS_GROUPS = ["Mounts", "Cast/Handstand", "Release Moves", "Dismounts"] as const;
+export const BEAM_GROUPS = ["Mounts", "Acrobatic", "Dance/Leaps", "Dismounts"] as const;
+export const FLOOR_GROUPS = ["Dance/Leaps", "Forward Tumbling", "Backward Tumbling", "Dismounts"] as const;
+
+export type BarsGroup = typeof BARS_GROUPS[number];
+export type BeamGroup = typeof BEAM_GROUPS[number];
+export type FloorGroup = typeof FLOOR_GROUPS[number];
+export type SkillGroup = BarsGroup | BeamGroup | FloorGroup;
+
+export const SKILL_GROUPS_BY_EVENT: Record<string, readonly string[]> = {
+  Bars: BARS_GROUPS,
+  Beam: BEAM_GROUPS,
+  Floor: FLOOR_GROUPS,
+};
+
 // Goal Timeframes
 export const GOAL_TIMEFRAMES = ["Daily", "Weekly", "Monthly", "Quarterly", "Yearly"] as const;
 export type GoalTimeframe = typeof GOAL_TIMEFRAMES[number];
@@ -55,6 +71,7 @@ export const skills = pgTable("skills", {
   event: text("event").notNull(), // Vault, Bars, Beam, Floor
   description: text("description"),
   vaultValue: real("vault_value"), // Numeric value for vault skills (e.g., 10.0)
+  skillGroup: text("skill_group"), // Group for Bars/Beam/Floor skills (null for Vault)
 });
 
 export const insertSkillSchema = createInsertSchema(skills).omit({ id: true });
@@ -132,9 +149,17 @@ export type User = typeof users.$inferSelect;
 // Helper function to calculate start value
 // For Vault: uses the vault's numeric value directly
 // For Bars/Beam/Floor: counts only TOP 8 skills (highest values first)
-export function calculateStartValue(skills: Skill[], event?: string): { startValue: number; crFulfilled: boolean; cvBonus: number; topSkills: Skill[] } {
+// Group bonus: 0.5 per group represented (max 2.0 for all 4 groups)
+export function calculateStartValue(skills: Skill[], event?: string): { 
+  startValue: number; 
+  crFulfilled: boolean; 
+  cvBonus: number; 
+  topSkills: Skill[];
+  groupBonus: number;
+  groupsPresent: string[];
+} {
   if (skills.length === 0) {
-    return { startValue: 0, crFulfilled: false, cvBonus: 0, topSkills: [] };
+    return { startValue: 0, crFulfilled: false, cvBonus: 0, topSkills: [], groupBonus: 0, groupsPresent: [] };
   }
 
   // For Vault, just return the vault value directly
@@ -146,6 +171,8 @@ export function calculateStartValue(skills: Skill[], event?: string): { startVal
       crFulfilled: false,
       cvBonus: 0,
       topSkills: skills,
+      groupBonus: 0,
+      groupsPresent: [],
     };
   }
 
@@ -163,11 +190,11 @@ export function calculateStartValue(skills: Skill[], event?: string): { startVal
     return sum + (SKILL_VALUE_MAP[skill.value as SkillValue] || 0);
   }, 0);
 
-  // CR (Composition Requirements) = 2.0 for elite routines
-  // For simplicity, we'll assume CR is fulfilled if there are at least 4 different value skills
-  const uniqueValues = new Set(topSkills.map(s => s.value));
-  const crFulfilled = uniqueValues.size >= 4 && topSkills.length >= 6;
-  const crValue = crFulfilled ? 2.0 : Math.min(uniqueValues.size * 0.5, 2.0);
+  // Group bonus: Check which groups are represented across ALL skills in routine
+  // 0.5 points per group, max 2.0 (all 4 groups)
+  const groupsPresent = Array.from(new Set(skills.filter(s => s.skillGroup).map(s => s.skillGroup!)));
+  const groupBonus = Math.min(groupsPresent.length * 0.5, 2.0);
+  const crFulfilled = groupsPresent.length === 4;
 
   // CV (Connection Value) - bonus for connected skills
   // Simplified: give 0.1 bonus for each consecutive pair of C+ skills
@@ -181,12 +208,14 @@ export function calculateStartValue(skills: Skill[], event?: string): { startVal
     }
   }
 
-  const startValue = difficultyValue + crValue + cvBonus;
+  const startValue = difficultyValue + groupBonus + cvBonus;
 
   return {
     startValue: Math.round(startValue * 100) / 100,
     crFulfilled,
     cvBonus: Math.round(cvBonus * 100) / 100,
     topSkills,
+    groupBonus: Math.round(groupBonus * 100) / 100,
+    groupsPresent,
   };
 }
