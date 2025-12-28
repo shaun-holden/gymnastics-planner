@@ -38,10 +38,28 @@ export const BARS_CR = [
   { id: "non_flight_360_turn", label: "Non-flight element with min. 360° turn (not MT)" },
 ] as const;
 
+export const BEAM_CR = [
+  { id: "dance_connection", label: "Connection of 2+ dance elements (1 leap/jump with 180° split)" },
+  { id: "turn_or_roll", label: "Turn (Gr. 3) or Roll/Flairs" },
+  { id: "acro_series", label: "Acro series (min. 2 flight elements, 1 salto)" },
+  { id: "acro_directions", label: "Acro elements in different directions (fwd/swd and bwd)" },
+] as const;
+
+export const FLOOR_CR = [
+  { id: "dance_passage", label: "Dance passage (2 leaps/hops, 1 with 180° split)" },
+  { id: "salto_la_turn", label: "Salto with LA turn (min. 360°)" },
+  { id: "salto_double_ba", label: "Salto with double BA" },
+  { id: "salto_bwd_fwd", label: "Salto bwd and salto fwd (no aerials) in same or different line" },
+] as const;
+
 export type BarsCR = typeof BARS_CR[number]["id"];
+export type BeamCR = typeof BEAM_CR[number]["id"];
+export type FloorCR = typeof FLOOR_CR[number]["id"];
 
 export const CR_BY_EVENT: Record<string, readonly { id: string; label: string }[]> = {
   Bars: BARS_CR,
+  Beam: BEAM_CR,
+  Floor: FLOOR_CR,
 };
 
 // Goal Timeframes
@@ -86,7 +104,7 @@ export const skills = pgTable("skills", {
   description: text("description"),
   vaultValue: real("vault_value"), // Numeric value for vault skills (e.g., 10.0)
   skillGroup: text("skill_group"), // Group for Bars/Beam/Floor skills (null for Vault)
-  crTags: text("cr_tags").array(), // Composition Requirement tags (for Bars)
+  crTags: text("cr_tags").array(), // Composition Requirement tags (for Bars, Beam, Floor)
 });
 
 export const insertSkillSchema = createInsertSchema(skills).omit({ id: true });
@@ -217,8 +235,8 @@ export function calculateStartValue(skills: Skill[], event?: string): {
   const groupsPresent = Array.from(new Set(skills.filter(s => s.skillGroup).map(s => s.skillGroup!)));
   const groupBonus = Math.min(groupsPresent.length * 0.5, 2.0);
 
-  // CR bonus: Only applies to Bars - check which composition requirements are fulfilled
-  // 0.5 points per CR, max 2.0 (all 4 CRs)
+  // CR bonus: Check which composition requirements are fulfilled for this event
+  // 0.5 points per CR, max 2.0 (all 4 CRs) - applies to Bars, Beam, Floor
   const currentEvent = event || (skills.length > 0 ? skills[0].event : "");
   const eventCRIds = (CR_BY_EVENT[currentEvent] || []).map(cr => cr.id);
   const allCrTags = skills.flatMap(s => s.crTags || []);

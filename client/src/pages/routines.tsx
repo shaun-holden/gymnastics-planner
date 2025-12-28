@@ -127,7 +127,7 @@ function StartValueCalculator({ skills, event }: { skills: Skill[]; event: strin
             </div>
           </div>
 
-          {event === "Bars" && eventCRs.length > 0 && (
+          {eventCRs.length > 0 && (
             <div className="p-3 rounded-md bg-muted/50 space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -171,7 +171,7 @@ function StartValueCalculator({ skills, event }: { skills: Skill[]; event: strin
           </div>
 
           <p className="text-xs text-muted-foreground">
-            DV = Top 8 skills. Group Bonus = 0.5 per group (max 2.0).{event === "Bars" ? " CR = 0.5 per requirement (max 2.0)." : ""} CV = 0.1 per consecutive C+ pair.
+            DV = Top 8 skills. Group Bonus = 0.5 per group (max 2.0). CR = 0.5 per requirement (max 2.0). CV = 0.1 per consecutive C+ pair.
           </p>
         </div>
       )}

@@ -207,7 +207,7 @@ export default function Skills() {
       description: data.description || null,
       vaultValue: data.event === "Vault" ? (data.vaultValue || 10.0) : null,
       skillGroup: data.event !== "Vault" && data.skillGroup && data.skillGroup !== "none" ? data.skillGroup : null,
-      crTags: data.event === "Bars" ? (data.crTags || []) : null,
+      crTags: data.event !== "Vault" ? (data.crTags || []) : null,
     };
     if (editingSkill) {
       updateMutation.mutate({ id: editingSkill.id, data: submitData });
@@ -397,7 +397,7 @@ export default function Skills() {
                         </FormItem>
                       )}
                     />
-                    {watchedEvent === "Bars" && CR_BY_EVENT["Bars"] && (
+                    {CR_BY_EVENT[watchedEvent] && (
                       <FormField
                         control={form.control}
                         name="crTags"
@@ -405,7 +405,7 @@ export default function Skills() {
                           <FormItem>
                             <FormLabel>Composition Requirements (CR)</FormLabel>
                             <div className="space-y-2">
-                              {CR_BY_EVENT["Bars"].map((cr) => (
+                              {CR_BY_EVENT[watchedEvent].map((cr) => (
                                 <div key={cr.id} className="flex items-center space-x-2">
                                   <Checkbox
                                     id={cr.id}
