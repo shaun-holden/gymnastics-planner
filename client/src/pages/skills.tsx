@@ -43,7 +43,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { Skill, InsertSkill } from "@shared/schema";
-import { EVENTS, SKILL_VALUES, SKILL_VALUE_MAP, SKILL_GROUPS_BY_EVENT, getSkillNumericValue } from "@shared/schema";
+import { EVENTS, SKILL_VALUES, SKILL_VALUE_MAP, SKILL_GROUPS_BY_EVENT, CR_BY_EVENT, getSkillNumericValue } from "@shared/schema";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const formSchema = z.object({
   name: z.string().min(2, "Skill name must be at least 2 characters"),
@@ -52,6 +53,7 @@ const formSchema = z.object({
   description: z.string().optional(),
   vaultValue: z.number().min(0).max(20).optional(),
   skillGroup: z.string().optional(),
+  crTags: z.array(z.string()).optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -86,11 +88,21 @@ function SkillCard({
             <p className="text-xs text-muted-foreground font-mono">
               {isVault ? `Vault Value: ${numericValue.toFixed(2)}` : `Value: ${numericValue.toFixed(1)}`}
             </p>
-            {skill.skillGroup && (
-              <Badge variant="outline" className="mt-1 text-xs">
-                {skill.skillGroup}
-              </Badge>
-            )}
+            <div className="flex flex-wrap gap-1 mt-1">
+              {skill.skillGroup && (
+                <Badge variant="outline" className="text-xs">
+                  {skill.skillGroup}
+                </Badge>
+              )}
+              {skill.crTags && skill.crTags.length > 0 && skill.crTags.map((tag) => {
+                const crDef = CR_BY_EVENT[skill.event]?.find(cr => cr.id === tag);
+                return crDef ? (
+                  <Badge key={tag} variant="secondary" className="text-xs">
+                    CR
+                  </Badge>
+                ) : null;
+              })}
+            </div>
             {skill.description && (
               <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
                 {skill.description}
@@ -139,6 +151,7 @@ export default function Skills() {
       description: "",
       vaultValue: 10.0,
       skillGroup: "",
+      crTags: [],
     },
   });
 
@@ -194,6 +207,7 @@ export default function Skills() {
       description: data.description || null,
       vaultValue: data.event === "Vault" ? (data.vaultValue || 10.0) : null,
       skillGroup: data.event !== "Vault" && data.skillGroup && data.skillGroup !== "none" ? data.skillGroup : null,
+      crTags: data.event === "Bars" ? (data.crTags || []) : null,
     };
     if (editingSkill) {
       updateMutation.mutate({ id: editingSkill.id, data: submitData });
@@ -211,6 +225,7 @@ export default function Skills() {
       description: skill.description || "",
       vaultValue: skill.vaultValue || 10.0,
       skillGroup: skill.skillGroup || "",
+      crTags: skill.crTags || [],
     });
     setIsDialogOpen(true);
   };
@@ -224,6 +239,7 @@ export default function Skills() {
       description: "",
       vaultValue: 10.0,
       skillGroup: "",
+      crTags: [],
     });
     setIsDialogOpen(true);
   };
@@ -381,6 +397,43 @@ export default function Skills() {
                         </FormItem>
                       )}
                     />
+                    {watchedEvent === "Bars" && CR_BY_EVENT["Bars"] && (
+                      <FormField
+                        control={form.control}
+                        name="crTags"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Composition Requirements (CR)</FormLabel>
+                            <div className="space-y-2">
+                              {CR_BY_EVENT["Bars"].map((cr) => (
+                                <div key={cr.id} className="flex items-center space-x-2">
+                                  <Checkbox
+                                    id={cr.id}
+                                    checked={field.value?.includes(cr.id) || false}
+                                    onCheckedChange={(checked) => {
+                                      const current = field.value || [];
+                                      if (checked) {
+                                        field.onChange([...current, cr.id]);
+                                      } else {
+                                        field.onChange(current.filter((id) => id !== cr.id));
+                                      }
+                                    }}
+                                    data-testid={`checkbox-cr-${cr.id}`}
+                                  />
+                                  <label
+                                    htmlFor={cr.id}
+                                    className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                  >
+                                    {cr.label}
+                                  </label>
+                                </div>
+                              ))}
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
                   </>
                 )}
                 <FormField

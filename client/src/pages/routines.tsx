@@ -43,7 +43,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { Routine, Skill, Athlete, InsertRoutine } from "@shared/schema";
-import { EVENTS, SKILL_VALUE_MAP, SKILL_GROUPS_BY_EVENT, calculateStartValue, getSkillNumericValue } from "@shared/schema";
+import { EVENTS, SKILL_VALUE_MAP, SKILL_GROUPS_BY_EVENT, CR_BY_EVENT, calculateStartValue, getSkillNumericValue } from "@shared/schema";
 
 function getSkillDisplayValue(skill: Skill): string {
   if (skill.event === "Vault" && skill.vaultValue !== null && skill.vaultValue !== undefined) {
@@ -62,9 +62,10 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 function StartValueCalculator({ skills, event }: { skills: Skill[]; event: string }) {
-  const { startValue, crFulfilled, cvBonus, topSkills, groupBonus, groupsPresent } = calculateStartValue(skills, event);
+  const { startValue, crFulfilled, cvBonus, topSkills, groupBonus, groupsPresent, crBonus, crTagsPresent } = calculateStartValue(skills, event);
   const isVault = event === "Vault";
   const eventGroups = SKILL_GROUPS_BY_EVENT[event] || [];
+  const eventCRs = CR_BY_EVENT[event] || [];
 
   const difficultyValue = topSkills.reduce((sum, skill) => {
     return sum + getSkillNumericValue(skill);
@@ -109,11 +110,7 @@ function StartValueCalculator({ skills, event }: { skills: Skill[]; event: strin
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-sm">Group Bonus</span>
-                {crFulfilled ? (
-                  <Badge variant="default" className="text-xs">All 4 Groups</Badge>
-                ) : (
-                  <Badge variant="secondary" className="text-xs">{groupsPresent.length}/4 Groups</Badge>
-                )}
+                <Badge variant="secondary" className="text-xs">{groupsPresent.length}/4 Groups</Badge>
               </div>
               <span className="font-mono font-medium">+{groupBonus.toFixed(1)}</span>
             </div>
@@ -130,6 +127,35 @@ function StartValueCalculator({ skills, event }: { skills: Skill[]; event: strin
             </div>
           </div>
 
+          {event === "Bars" && eventCRs.length > 0 && (
+            <div className="p-3 rounded-md bg-muted/50 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">Composition Requirements (CR)</span>
+                  {crFulfilled ? (
+                    <Badge variant="default" className="text-xs">All 4 CRs</Badge>
+                  ) : (
+                    <Badge variant="secondary" className="text-xs">{crTagsPresent.length}/4 CRs</Badge>
+                  )}
+                </div>
+                <span className="font-mono font-medium">+{crBonus.toFixed(1)}</span>
+              </div>
+              <div className="flex flex-col gap-1">
+                {eventCRs.map((cr) => (
+                  <div key={cr.id} className="flex items-center gap-2">
+                    <Badge 
+                      variant={crTagsPresent.includes(cr.id) ? "default" : "outline"}
+                      className="text-xs shrink-0"
+                    >
+                      {crTagsPresent.includes(cr.id) ? "Yes" : "No"}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">{cr.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center justify-between p-3 rounded-md bg-muted/50">
             <span className="text-sm">Connection Value (CV)</span>
             <span className="font-mono font-medium">+{cvBonus.toFixed(1)}</span>
@@ -145,7 +171,7 @@ function StartValueCalculator({ skills, event }: { skills: Skill[]; event: strin
           </div>
 
           <p className="text-xs text-muted-foreground">
-            DV = Top 8 skills. Group Bonus = 0.5 per group (max 2.0). CV = 0.1 per consecutive C+ pair.
+            DV = Top 8 skills. Group Bonus = 0.5 per group (max 2.0).{event === "Bars" ? " CR = 0.5 per requirement (max 2.0)." : ""} CV = 0.1 per consecutive C+ pair.
           </p>
         </div>
       )}
@@ -314,7 +340,7 @@ export default function Routines() {
   });
 
   const onSubmit = (data: FormData) => {
-    const { startValue, crFulfilled, cvBonus, groupBonus } = calculateStartValue(selectedSkills, data.event);
+    const { startValue, crFulfilled, cvBonus, groupBonus, crBonus } = calculateStartValue(selectedSkills, data.event);
     const submitData = {
       ...data,
       skillIds: selectedSkillIds,
@@ -322,6 +348,7 @@ export default function Routines() {
       crFulfilled,
       cvBonus,
       groupBonus,
+      crBonus,
     };
     if (editingRoutine) {
       updateMutation.mutate({ id: editingRoutine.id, data: submitData });

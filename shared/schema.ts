@@ -30,6 +30,20 @@ export const SKILL_GROUPS_BY_EVENT: Record<string, readonly string[]> = {
   Floor: FLOOR_GROUPS,
 };
 
+// Composition Requirements by Event (each worth 0.5, max 2.0)
+export const BARS_CR = [
+  { id: "hb_to_lb_flight", label: "Flight element from HB to LB" },
+  { id: "same_bar_flight", label: "Flight element on the same bar" },
+  { id: "different_grips", label: "Different grips (not cast, MT or DMT)" },
+  { id: "non_flight_360_turn", label: "Non-flight element with min. 360° turn (not MT)" },
+] as const;
+
+export type BarsCR = typeof BARS_CR[number]["id"];
+
+export const CR_BY_EVENT: Record<string, readonly { id: string; label: string }[]> = {
+  Bars: BARS_CR,
+};
+
 // Goal Timeframes
 export const GOAL_TIMEFRAMES = ["Daily", "Weekly", "Monthly", "Quarterly", "Yearly"] as const;
 export type GoalTimeframe = typeof GOAL_TIMEFRAMES[number];
@@ -72,6 +86,7 @@ export const skills = pgTable("skills", {
   description: text("description"),
   vaultValue: real("vault_value"), // Numeric value for vault skills (e.g., 10.0)
   skillGroup: text("skill_group"), // Group for Bars/Beam/Floor skills (null for Vault)
+  crTags: text("cr_tags").array(), // Composition Requirement tags (for Bars)
 });
 
 export const insertSkillSchema = createInsertSchema(skills).omit({ id: true });
@@ -127,9 +142,10 @@ export const routines = pgTable("routines", {
   event: text("event").notNull(),
   skillIds: text("skill_ids").array().notNull(), // Ordered array of skill IDs
   startValue: real("start_value").default(0),
-  crFulfilled: boolean("cr_fulfilled").default(false), // True when all 4 groups are present
+  crFulfilled: boolean("cr_fulfilled").default(false), // True when all 4 CR requirements are met
   cvBonus: real("cv_bonus").default(0),
   groupBonus: real("group_bonus").default(0), // 0.5 per group, max 2.0
+  crBonus: real("cr_bonus").default(0), // 0.5 per CR, max 2.0
 });
 
 export const insertRoutineSchema = createInsertSchema(routines).omit({ id: true });
@@ -151,6 +167,7 @@ export type User = typeof users.$inferSelect;
 // For Vault: uses the vault's numeric value directly
 // For Bars/Beam/Floor: counts only TOP 8 skills (highest values first)
 // Group bonus: 0.5 per group represented (max 2.0 for all 4 groups)
+// CR bonus: 0.5 per composition requirement met (max 2.0)
 export function calculateStartValue(skills: Skill[], event?: string): { 
   startValue: number; 
   crFulfilled: boolean; 
@@ -158,9 +175,11 @@ export function calculateStartValue(skills: Skill[], event?: string): {
   topSkills: Skill[];
   groupBonus: number;
   groupsPresent: string[];
+  crBonus: number;
+  crTagsPresent: string[];
 } {
   if (skills.length === 0) {
-    return { startValue: 0, crFulfilled: false, cvBonus: 0, topSkills: [], groupBonus: 0, groupsPresent: [] };
+    return { startValue: 0, crFulfilled: false, cvBonus: 0, topSkills: [], groupBonus: 0, groupsPresent: [], crBonus: 0, crTagsPresent: [] };
   }
 
   // For Vault, just return the vault value directly
@@ -174,6 +193,8 @@ export function calculateStartValue(skills: Skill[], event?: string): {
       topSkills: skills,
       groupBonus: 0,
       groupsPresent: [],
+      crBonus: 0,
+      crTagsPresent: [],
     };
   }
 
@@ -195,7 +216,16 @@ export function calculateStartValue(skills: Skill[], event?: string): {
   // 0.5 points per group, max 2.0 (all 4 groups)
   const groupsPresent = Array.from(new Set(skills.filter(s => s.skillGroup).map(s => s.skillGroup!)));
   const groupBonus = Math.min(groupsPresent.length * 0.5, 2.0);
-  const crFulfilled = groupsPresent.length === 4;
+
+  // CR bonus: Only applies to Bars - check which composition requirements are fulfilled
+  // 0.5 points per CR, max 2.0 (all 4 CRs)
+  const currentEvent = event || (skills.length > 0 ? skills[0].event : "");
+  const eventCRIds = (CR_BY_EVENT[currentEvent] || []).map(cr => cr.id);
+  const allCrTags = skills.flatMap(s => s.crTags || []);
+  const validCrTags = allCrTags.filter(tag => eventCRIds.includes(tag));
+  const crTagsPresent = Array.from(new Set(validCrTags));
+  const crBonus = Math.min(crTagsPresent.length * 0.5, 2.0);
+  const crFulfilled = crTagsPresent.length >= 4;
 
   // CV (Connection Value) - bonus for connected skills
   // Simplified: give 0.1 bonus for each consecutive pair of C+ skills
@@ -209,7 +239,7 @@ export function calculateStartValue(skills: Skill[], event?: string): {
     }
   }
 
-  const startValue = difficultyValue + groupBonus + cvBonus;
+  const startValue = difficultyValue + groupBonus + crBonus + cvBonus;
 
   return {
     startValue: Math.round(startValue * 100) / 100,
@@ -218,5 +248,7 @@ export function calculateStartValue(skills: Skill[], event?: string): {
     topSkills,
     groupBonus: Math.round(groupBonus * 100) / 100,
     groupsPresent,
+    crBonus: Math.round(crBonus * 100) / 100,
+    crTagsPresent,
   };
 }

@@ -66,6 +66,11 @@ shared/
       - Bars groups: Mounts, Cast/Handstand, Release Moves, Dismounts
       - Beam groups: Mounts, Acrobatic, Dance/Leaps, Dismounts
       - Floor groups: Dance/Leaps, Forward Tumbling, Backward Tumbling, Dismounts
+    - **Bars Composition Requirements (CR)** = 0.5 per requirement (max 2.0)
+      - Flight element from HB to LB
+      - Flight element on the same bar
+      - Different grips (not cast, MT or DMT)
+      - Non-flight element with min. 360° turn (not MT)
     - Connection Value (CV) bonus for consecutive C+ skills
 - Live preview of start value while building
 

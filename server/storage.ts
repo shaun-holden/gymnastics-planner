@@ -136,6 +136,7 @@ export class MemStorage implements IStorage {
       description: insertSkill.description || null,
       vaultValue: insertSkill.vaultValue ?? null,
       skillGroup: insertSkill.skillGroup ?? null,
+      crTags: insertSkill.crTags ?? null,
     };
     this.skills.set(id, skill);
     return skill;
@@ -244,6 +245,7 @@ export class MemStorage implements IStorage {
       crFulfilled: insertRoutine.crFulfilled || false,
       cvBonus: insertRoutine.cvBonus || 0,
       groupBonus: insertRoutine.groupBonus || 0,
+      crBonus: insertRoutine.crBonus || 0,
     };
     this.routines.set(id, routine);
     return routine;
