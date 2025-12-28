@@ -43,7 +43,11 @@ shared/
 
 ### 1. Athletes
 - Create/Edit/Delete athlete profiles
-- Fields: name, level (1-10, Elite), competitive system (USA Gymnastics, NGA, AAU)
+- Fields: name, level, competitive system (USA Gymnastics, NGA, AAU)
+- Levels vary by system:
+  - USA Gymnastics: 1-10, TOPS, HOPES 11-12, HOPES 13-14, Jr. Elite, Elite, Xcel Bronze/Silver/Gold/Platinum/Diamond/Sapphire
+  - NGA: 1-10, Bronze, Silver, Gold, Platinum, Diamond, Sapphire
+  - AAU: 1-10, Bronze, Silver, Gold, Platinum, Diamond, Sapphire
 
 ### 2. Skill Bank
 - Organize skills by event: Vault, Bars, Beam, Floor

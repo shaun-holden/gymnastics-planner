@@ -60,7 +60,29 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-const LEVELS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "Elite"];
+const LEVELS_BY_SYSTEM: Record<string, string[]> = {
+  "USA Gymnastics": [
+    "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
+    "TOPS", "HOPES 11-12", "HOPES 13-14", "Jr. Elite", "Elite",
+    "Xcel Bronze", "Xcel Silver", "Xcel Gold", "Xcel Platinum", "Xcel Diamond", "Xcel Sapphire"
+  ],
+  "NGA": [
+    "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
+    "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Sapphire"
+  ],
+  "AAU": [
+    "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
+    "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Sapphire"
+  ],
+};
+
+function formatLevel(level: string): string {
+  const numericLevels = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
+  if (numericLevels.includes(level)) {
+    return `Level ${level}`;
+  }
+  return level;
+}
 
 export default function Athletes() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -76,6 +98,9 @@ export default function Athletes() {
       competitiveSystem: "USA Gymnastics",
     },
   });
+
+  const watchedSystem = form.watch("competitiveSystem");
+  const availableLevels = LEVELS_BY_SYSTEM[watchedSystem] || [];
 
   const { data: athletes, isLoading } = useQuery<Athlete[]>({
     queryKey: ["/api/athletes"],
@@ -240,9 +265,9 @@ export default function Athletes() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {LEVELS.map((level) => (
+                          {availableLevels.map((level) => (
                             <SelectItem key={level} value={level}>
-                              Level {level}
+                              {formatLevel(level)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -328,7 +353,7 @@ export default function Athletes() {
                       <Badge variant="outline">{athlete.competitiveSystem}</Badge>
                     </TableCell>
                     <TableCell>
-                      <span className="font-mono">Level {athlete.level}</span>
+                      <span className="font-mono">{formatLevel(athlete.level)}</span>
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
