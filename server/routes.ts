@@ -354,6 +354,38 @@ export async function registerRoutes(
     }
   });
 
+  // Diagnostic endpoint to check database status
+  app.get("/api/admin/db-status", async (req: Request, res: Response) => {
+    try {
+      const skillCount = (await storage.getSkills()).length;
+      const athleteCount = (await storage.getAthletes()).length;
+      const practiceCount = (await storage.getPractices()).length;
+      const goalCount = (await storage.getGoals()).length;
+      const routineCount = (await storage.getRoutines()).length;
+      const curriculumCount = (await storage.getCurriculumItems()).length;
+      
+      res.json({
+        status: "connected",
+        counts: {
+          skills: skillCount,
+          athletes: athleteCount,
+          practices: practiceCount,
+          goals: goalCount,
+          routines: routineCount,
+          curriculum: curriculumCount
+        },
+        env: process.env.NODE_ENV || "development"
+      });
+    } catch (error) {
+      console.error("Database status check failed:", error);
+      res.status(500).json({ 
+        status: "error", 
+        error: String(error),
+        env: process.env.NODE_ENV || "development"
+      });
+    }
+  });
+
   // Curriculum CRUD
   app.get("/api/curriculum", async (req: Request, res: Response) => {
     try {
