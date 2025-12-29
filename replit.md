@@ -54,11 +54,14 @@ shared/
 
 ### 1. Athletes
 - Create/Edit/Delete athlete profiles
-- Fields: name, level, competitive system (USA Gymnastics, NGA, AAU)
+- Fields: name, level, competitive system (USA Gymnastics, NGA, AAU), training group
 - Levels vary by system:
   - USA Gymnastics: 1-10, TOPS, HOPES 11-12, HOPES 13-14, Jr. Elite, Elite, Xcel Bronze/Silver/Gold/Platinum/Diamond/Sapphire
   - NGA: 1-10, Bronze, Silver, Gold, Platinum, Diamond, Sapphire
   - AAU: 1-10, Bronze, Silver, Gold, Platinum, Diamond, Sapphire
+- Custom Levels: Create custom levels in addition to system defaults (e.g., Pre-Team, Developmental)
+- Training Groups: Organize athletes into groups with color-coded tags (e.g., Team A, Morning Practice)
+- Athletes page has tabs: Athletes, Custom Levels, Groups
 
 ### 2. Skill Bank
 - Organize skills by event: Vault, Bars, Beam, Floor
@@ -117,6 +120,18 @@ shared/
 
 ## API Endpoints
 
+### Levels
+- `GET /api/levels` - List all custom levels
+- `POST /api/levels` - Create custom level
+- `PATCH /api/levels/:id` - Update custom level
+- `DELETE /api/levels/:id` - Delete custom level
+
+### Groups
+- `GET /api/groups` - List all training groups
+- `POST /api/groups` - Create training group
+- `PATCH /api/groups/:id` - Update training group
+- `DELETE /api/groups/:id` - Delete training group
+
 ### Athletes
 - `GET /api/athletes` - List all athletes
 - `POST /api/athletes` - Create athlete
@@ -170,9 +185,13 @@ The app runs on port 5000.
 - Implemented automatic skill seeding on server startup with duplicate prevention
 - Set up PostgreSQL database integration with Drizzle ORM for data persistence (Dec 29, 2025)
 - Converted storage layer from in-memory (MemStorage) to database-backed (DatabaseStorage)
+- Added custom levels and training groups feature (Dec 29, 2025)
+  - New database tables: levels (name, competitiveSystem, order) and groups (name, description, color)
+  - Athletes can now be assigned to training groups with color-coded visual indicators
+  - Custom levels can be created in addition to standard competitive system levels
+  - Athletes page reorganized with tabs: Athletes, Custom Levels, Groups
 
 ## Future Enhancements
 - Export to PDF/Excel/CSV/Word
-- User authentication
 - Multiple coaches/teams support
 - Practice recommendations based on goals
