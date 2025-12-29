@@ -61,11 +61,21 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Seed skills from FIG Code of Points if database is empty
   try {
-    // Seed skills from FIG Code of Points if database is empty
     await storage.seedSkills();
   } catch (err) {
-    console.error("Error seeding skills (continuing anyway):", err);
+    console.error("Error seeding skills:", err);
+    // Don't continue if seeding fails in production - skills are essential
+    if (process.env.NODE_ENV === "production") {
+      console.error("Skills seeding failed in production - retrying once...");
+      try {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        await storage.seedSkills();
+      } catch (retryErr) {
+        console.error("Skills seeding retry failed:", retryErr);
+      }
+    }
   }
   
   await registerRoutes(httpServer, app);
