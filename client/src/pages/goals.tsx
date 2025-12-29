@@ -40,6 +40,8 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Target, Trash2, Edit, MoreHorizontal, Check, Circle } from "lucide-react";
+import { ExportDropdown } from "@/components/export-dropdown";
+import { exportGoals } from "@/lib/export-utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -311,14 +313,19 @@ export default function Goals() {
             Set and track goals for individual athletes or the whole team
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={handleOpenDialog} data-testid="button-add-goal">
-              <Plus className="h-4 w-4 mr-2" />
-              Set Goal
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
+        <div className="flex items-center gap-2 flex-wrap">
+          <ExportDropdown
+            onExport={(format) => goals && athletes && exportGoals(goals, athletes, format)}
+            disabled={!goals?.length}
+          />
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={handleOpenDialog} data-testid="button-add-goal">
+                <Plus className="h-4 w-4 mr-2" />
+                Set Goal
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
             <DialogHeader>
               <DialogTitle>
                 {editingGoal ? "Edit Goal" : "Set New Goal"}
@@ -481,7 +488,8 @@ export default function Goals() {
               </form>
             </Form>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
       {/* Quick Stats */}

@@ -36,6 +36,8 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Dumbbell, Search, Trash2, Edit, MoreHorizontal, X, Filter } from "lucide-react";
+import { ExportDropdown } from "@/components/export-dropdown";
+import { exportSkills } from "@/lib/export-utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -286,14 +288,19 @@ export default function Skills() {
             Manage skills for Vault, Bars, Beam, and Floor
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={handleOpenDialog} data-testid="button-add-skill">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Skill
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
+        <div className="flex items-center gap-2 flex-wrap">
+          <ExportDropdown
+            onExport={(format) => skills && exportSkills(skills, format)}
+            disabled={!skills?.length}
+          />
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={handleOpenDialog} data-testid="button-add-skill">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Skill
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
             <DialogHeader>
               <DialogTitle>
                 {editingSkill ? "Edit Skill" : "Add New Skill"}
@@ -490,7 +497,8 @@ export default function Skills() {
               </form>
             </Form>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
       {/* Search and Filter */}

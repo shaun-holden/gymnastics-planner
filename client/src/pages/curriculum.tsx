@@ -66,6 +66,8 @@ import type { Curriculum, Skill, InsertCurriculum, Athlete } from "@shared/schem
 import { EVENTS, CURRICULUM_STATUSES } from "@shared/schema";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Users, User } from "lucide-react";
+import { ExportDropdown } from "@/components/export-dropdown";
+import { exportCurriculum } from "@/lib/export-utils";
 
 const PROGRAMS = ["Competitive", "Recreational", "TOPS", "Xcel"] as const;
 const LEVELS = [
@@ -487,14 +489,19 @@ export default function CurriculumPage() {
             Plan and track skill progression by program, level, and event
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={handleOpenDialog} data-testid="button-add-curriculum">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Skill
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-lg">
+        <div className="flex items-center gap-2 flex-wrap">
+          <ExportDropdown
+            onExport={(format) => curriculumItems && skills && exportCurriculum(curriculumItems, skills, format)}
+            disabled={!curriculumItems?.length}
+          />
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={handleOpenDialog} data-testid="button-add-curriculum">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Skill
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle>{editingItem ? "Edit Curriculum Item" : "Add Skill to Curriculum"}</DialogTitle>
             </DialogHeader>
@@ -764,7 +771,8 @@ export default function CurriculumPage() {
               </form>
             </Form>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-4">

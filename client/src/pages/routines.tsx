@@ -36,6 +36,8 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Award, Trash2, Edit, MoreHorizontal, X, GripVertical, Calculator, ChevronRight, Link2, Search, Unlink } from "lucide-react";
+import { ExportDropdown } from "@/components/export-dropdown";
+import { exportRoutines } from "@/lib/export-utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -502,18 +504,23 @@ export default function Routines() {
             Build competitive routines with automatic start value calculation
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button
-              onClick={handleOpenDialog}
-              disabled={!athletes?.length || !skills?.length}
-              data-testid="button-create-routine"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Create Routine
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="flex items-center gap-2 flex-wrap">
+          <ExportDropdown
+            onExport={(format) => routines && athletes && skills && exportRoutines(routines, athletes, skills, format)}
+            disabled={!routines?.length}
+          />
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button
+                onClick={handleOpenDialog}
+                disabled={!athletes?.length || !skills?.length}
+                data-testid="button-create-routine"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create Routine
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
             <DialogHeader>
               <DialogTitle>
                 {editingRoutine ? "Edit Routine" : "Create Routine"}
@@ -789,7 +796,8 @@ export default function Routines() {
               </form>
             </Form>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
       {(!athletes?.length || !skills?.length) && (

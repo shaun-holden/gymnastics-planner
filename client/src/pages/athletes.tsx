@@ -43,6 +43,8 @@ import {
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Users, Search, Trash2, Edit, MoreHorizontal } from "lucide-react";
+import { ExportDropdown } from "@/components/export-dropdown";
+import { exportAthletes } from "@/lib/export-utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -196,14 +198,19 @@ export default function Athletes() {
             Manage your gymnastics athletes and their profiles
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={handleOpenDialog} data-testid="button-add-athlete">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Athlete
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
+        <div className="flex items-center gap-2 flex-wrap">
+          <ExportDropdown
+            onExport={(format) => athletes && exportAthletes(athletes, format)}
+            disabled={!athletes?.length}
+          />
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={handleOpenDialog} data-testid="button-add-athlete">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Athlete
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
             <DialogHeader>
               <DialogTitle>
                 {editingAthlete ? "Edit Athlete" : "Add New Athlete"}
@@ -292,7 +299,8 @@ export default function Athletes() {
               </form>
             </Form>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
       {/* Search */}

@@ -39,6 +39,8 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Calendar, Clock, Trash2, Edit, MoreHorizontal, Users, User, Layers } from "lucide-react";
+import { ExportDropdown } from "@/components/export-dropdown";
+import { exportPractices } from "@/lib/export-utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -348,13 +350,18 @@ export default function Practices() {
             Create and schedule practice plans for athletes, levels, or groups
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={handleOpenDialog} data-testid="button-add-practice">
-              <Plus className="h-4 w-4 mr-2" />
-              Create Practice
-            </Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2 flex-wrap">
+          <ExportDropdown
+            onExport={(format) => practices && athletes && exportPractices(practices, athletes, format)}
+            disabled={!practices?.length}
+          />
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={handleOpenDialog} data-testid="button-add-practice">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Practice
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
@@ -622,7 +629,8 @@ export default function Practices() {
               </form>
             </Form>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
