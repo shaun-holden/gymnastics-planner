@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
@@ -268,6 +268,11 @@ export default function CurriculumPage() {
   const { data: skills, isLoading: skillsLoading } = useQuery<Skill[]>({
     queryKey: ["/api/skills"],
   });
+
+  // Refresh skills cache on mount to ensure latest skills are loaded
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ["/api/skills"] });
+  }, []);
 
   const createMutation = useMutation({
     mutationFn: (data: InsertCurriculum) => apiRequest("POST", "/api/curriculum", data),

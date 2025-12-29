@@ -320,6 +320,11 @@ export default function Routines() {
     queryKey: ["/api/skills"],
   });
 
+  // Refresh skills cache on mount to ensure latest skills are loaded
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ["/api/skills"] });
+  }, []);
+
   // Filter skills by selected event and search term
   const eventSkills = skills?.filter((s) => {
     if (s.event !== selectedEvent) return false;
