@@ -9,6 +9,8 @@ import {
   type InsertGoal,
   type Routine,
   type InsertRoutine,
+  type Curriculum,
+  type InsertCurriculum,
   type User,
   type InsertUser,
   athletes,
@@ -16,6 +18,7 @@ import {
   practices,
   goals,
   routines,
+  curriculum,
   users,
 } from "@shared/schema";
 import { db } from "./db";
@@ -74,6 +77,13 @@ export interface IStorage {
   createRoutine(routine: InsertRoutine): Promise<Routine>;
   updateRoutine(id: string, routine: Partial<InsertRoutine>): Promise<Routine | undefined>;
   deleteRoutine(id: string): Promise<boolean>;
+
+  // Curriculum
+  getCurriculumItems(): Promise<Curriculum[]>;
+  getCurriculumItem(id: string): Promise<Curriculum | undefined>;
+  createCurriculumItem(item: InsertCurriculum): Promise<Curriculum>;
+  updateCurriculumItem(id: string, item: Partial<InsertCurriculum>): Promise<Curriculum | undefined>;
+  deleteCurriculumItem(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -285,6 +295,43 @@ export class DatabaseStorage implements IStorage {
 
   async deleteRoutine(id: string): Promise<boolean> {
     const result = await db.delete(routines).where(eq(routines.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Curriculum
+  async getCurriculumItems(): Promise<Curriculum[]> {
+    return await db.select().from(curriculum);
+  }
+
+  async getCurriculumItem(id: string): Promise<Curriculum | undefined> {
+    const [item] = await db.select().from(curriculum).where(eq(curriculum.id, id));
+    return item || undefined;
+  }
+
+  async createCurriculumItem(insertItem: InsertCurriculum): Promise<Curriculum> {
+    const id = randomUUID();
+    const [item] = await db.insert(curriculum).values({
+      ...insertItem,
+      id,
+      introDate: insertItem.introDate || null,
+      checkpointDate: insertItem.checkpointDate || null,
+      masteryTargetDate: insertItem.masteryTargetDate || null,
+      status: insertItem.status || "Not Started",
+      progress: insertItem.progress || 0,
+      notes: insertItem.notes || null,
+    }).returning();
+    return item;
+  }
+
+  async updateCurriculumItem(id: string, data: Partial<InsertCurriculum>): Promise<Curriculum | undefined> {
+    const sanitized = stripUndefined(data);
+    if (Object.keys(sanitized).length === 0) return this.getCurriculumItem(id);
+    const [updated] = await db.update(curriculum).set(sanitized).where(eq(curriculum.id, id)).returning();
+    return updated || undefined;
+  }
+
+  async deleteCurriculumItem(id: string): Promise<boolean> {
+    const result = await db.delete(curriculum).where(eq(curriculum.id, id)).returning();
     return result.length > 0;
   }
 }

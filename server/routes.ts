@@ -7,6 +7,7 @@ import {
   insertPracticeSchema,
   insertGoalSchema,
   insertRoutineSchema,
+  insertCurriculumSchema,
 } from "@shared/schema";
 import { z } from "zod";
 
@@ -326,6 +327,69 @@ export async function registerRoutes(
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ error: "Failed to delete routine" });
+    }
+  });
+
+  // Curriculum CRUD
+  app.get("/api/curriculum", async (req: Request, res: Response) => {
+    try {
+      const items = await storage.getCurriculumItems();
+      res.json(items);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch curriculum items" });
+    }
+  });
+
+  app.get("/api/curriculum/:id", async (req: Request, res: Response) => {
+    try {
+      const item = await storage.getCurriculumItem(req.params.id);
+      if (!item) {
+        return res.status(404).json({ error: "Curriculum item not found" });
+      }
+      res.json(item);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch curriculum item" });
+    }
+  });
+
+  app.post("/api/curriculum", async (req: Request, res: Response) => {
+    try {
+      const parsed = insertCurriculumSchema.parse(req.body);
+      const item = await storage.createCurriculumItem(parsed);
+      res.status(201).json(item);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create curriculum item" });
+    }
+  });
+
+  app.patch("/api/curriculum/:id", async (req: Request, res: Response) => {
+    try {
+      const parsed = insertCurriculumSchema.partial().parse(req.body);
+      const item = await storage.updateCurriculumItem(req.params.id, parsed);
+      if (!item) {
+        return res.status(404).json({ error: "Curriculum item not found" });
+      }
+      res.json(item);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      res.status(500).json({ error: "Failed to update curriculum item" });
+    }
+  });
+
+  app.delete("/api/curriculum/:id", async (req: Request, res: Response) => {
+    try {
+      const success = await storage.deleteCurriculumItem(req.params.id);
+      if (!success) {
+        return res.status(404).json({ error: "Curriculum item not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete curriculum item" });
     }
   });
 

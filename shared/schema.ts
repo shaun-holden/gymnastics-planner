@@ -212,6 +212,30 @@ export const insertRoutineSchema = createInsertSchema(routines).omit({ id: true 
 export type InsertRoutine = z.infer<typeof insertRoutineSchema>;
 export type Routine = typeof routines.$inferSelect;
 
+// Curriculum Table
+// Hierarchical structure: Program → Level → Event → Skill
+// Timeline tracking: intro date, checkpoint, mastery target
+export const CURRICULUM_STATUSES = ["Not Started", "Introduced", "In Progress", "Checkpoint", "Mastered"] as const;
+export type CurriculumStatus = typeof CURRICULUM_STATUSES[number];
+
+export const curriculum = pgTable("curriculum", {
+  id: varchar("id").primaryKey(),
+  program: text("program").notNull(), // e.g., "Competitive", "Recreational", "TOPS"
+  level: text("level").notNull(), // e.g., "Level 4", "Level 5", etc.
+  event: text("event").notNull(), // Vault, Bars, Beam, Floor
+  skillId: varchar("skill_id").notNull(), // Reference to skills table
+  introDate: text("intro_date"), // When skill should be introduced (ISO date string)
+  checkpointDate: text("checkpoint_date"), // Progress checkpoint date
+  masteryTargetDate: text("mastery_target_date"), // Target mastery date
+  status: text("status").default("Not Started"), // Current status
+  progress: integer("progress").default(0), // 0-100 percent
+  notes: text("notes"), // Training notes
+});
+
+export const insertCurriculumSchema = createInsertSchema(curriculum).omit({ id: true });
+export type InsertCurriculum = z.infer<typeof insertCurriculumSchema>;
+export type Curriculum = typeof curriculum.$inferSelect;
+
 // Users Table (for authentication if needed later)
 export const users = pgTable("users", {
   id: varchar("id").primaryKey(),
