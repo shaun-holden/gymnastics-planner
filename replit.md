@@ -6,7 +6,7 @@ A comprehensive gymnastics lesson planning and training management application d
 ## Current State
 - **MVP Complete**: Core features implemented and working
 - **Data Storage**: PostgreSQL database with Drizzle ORM (data persists across restarts)
-- **Authentication**: Not implemented (single user mode)
+- **Authentication**: Replit Auth (OIDC) - Coaches must log in to access the app
 
 ## Project Structure
 ```
@@ -17,28 +17,37 @@ client/
 │   │   ├── app-sidebar.tsx
 │   │   ├── theme-provider.tsx
 │   │   └── theme-toggle.tsx
+│   ├── hooks/
+│   │   └── use-auth.ts   # Authentication hook
+│   ├── lib/
+│   │   ├── queryClient.ts
+│   │   └── auth-utils.ts # Auth error handling
 │   ├── pages/
+│   │   ├── landing.tsx      # Login page for unauthenticated users
 │   │   ├── dashboard.tsx    # Main stats overview
 │   │   ├── athletes.tsx     # Athlete management
 │   │   ├── skills.tsx       # Skill bank by event
 │   │   ├── practices.tsx    # Practice planning
 │   │   ├── routines.tsx     # Routine builder
-│   │   └── goals.tsx        # Goal tracking
+│   │   ├── goals.tsx        # Goal tracking
+│   │   └── curriculum.tsx   # Curriculum planning
 │   ├── App.tsx
 │   └── index.css
-├── lib/
-│   └── queryClient.ts
 
 server/
 ├── index.ts         # Express server entry
-├── routes.ts        # API endpoints
+├── routes.ts        # API endpoints (all protected with auth)
 ├── storage.ts       # DatabaseStorage with PostgreSQL/Drizzle
 ├── db.ts            # Database connection pool
-├── seed-skills.ts   # FIG Code of Points 2025-2028 skill data (329 skills)
+├── seed-skills.ts   # FIG Code of Points 2025-2028 skill data
+├── replit_integrations/
+│   └── auth/        # Replit Auth OIDC integration
 └── vite.ts
 
 shared/
-└── schema.ts        # Data models and types
+├── schema.ts        # Data models and types
+└── models/
+    └── auth.ts      # User and session models for auth
 ```
 
 ## Core Features
