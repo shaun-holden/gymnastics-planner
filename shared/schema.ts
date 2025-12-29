@@ -328,16 +328,7 @@ export const insertCurriculumSchema = createInsertSchema(curriculum).omit({ id: 
 export type InsertCurriculum = z.infer<typeof insertCurriculumSchema>;
 export type Curriculum = typeof curriculum.$inferSelect;
 
-// Users Table (for authentication if needed later)
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
-});
-
-export const insertUserSchema = createInsertSchema(users).omit({ id: true });
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
+// Users Table is now defined in ./models/auth.ts for Replit Auth
 
 // Helper function to get CV bonus for a pair of skills based on event-specific rules
 // Uses the CV_RULES constants to ensure FIG compliance
