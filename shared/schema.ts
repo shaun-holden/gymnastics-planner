@@ -206,11 +206,36 @@ export type ConnectionInfo = {
 };
 
 // Athletes Table
+// Custom Levels Table (coach can create their own levels)
+export const levels = pgTable("levels", {
+  id: varchar("id").primaryKey(),
+  name: text("name").notNull(),
+  competitiveSystem: text("competitive_system"), // Optional: can be system-specific or general
+  order: integer("order").default(0), // For sorting
+});
+
+export const insertLevelSchema = createInsertSchema(levels).omit({ id: true });
+export type InsertLevel = z.infer<typeof insertLevelSchema>;
+export type Level = typeof levels.$inferSelect;
+
+// Custom Groups Table (for organizing athletes into groups)
+export const groups = pgTable("groups", {
+  id: varchar("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  color: text("color"), // Optional color for visual identification
+});
+
+export const insertGroupSchema = createInsertSchema(groups).omit({ id: true });
+export type InsertGroup = z.infer<typeof insertGroupSchema>;
+export type Group = typeof groups.$inferSelect;
+
 export const athletes = pgTable("athletes", {
   id: varchar("id").primaryKey(),
   name: text("name").notNull(),
   level: text("level").notNull(),
   competitiveSystem: text("competitive_system").notNull(),
+  groupId: varchar("group_id"), // Reference to groups table (optional)
 });
 
 export const insertAthleteSchema = createInsertSchema(athletes).omit({ id: true });

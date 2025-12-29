@@ -11,15 +11,18 @@ import {
   type InsertRoutine,
   type Curriculum,
   type InsertCurriculum,
-  type User,
-  type InsertUser,
+  type Level,
+  type InsertLevel,
+  type Group,
+  type InsertGroup,
   athletes,
   skills,
   practices,
   goals,
   routines,
   curriculum,
-  users,
+  levels,
+  groups,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -37,10 +40,19 @@ function stripUndefined<T extends Record<string, unknown>>(obj: T): Partial<T> {
 }
 
 export interface IStorage {
-  // Users
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  // Levels
+  getLevels(): Promise<Level[]>;
+  getLevel(id: string): Promise<Level | undefined>;
+  createLevel(level: InsertLevel): Promise<Level>;
+  updateLevel(id: string, level: Partial<InsertLevel>): Promise<Level | undefined>;
+  deleteLevel(id: string): Promise<boolean>;
+
+  // Groups
+  getGroups(): Promise<Group[]>;
+  getGroup(id: string): Promise<Group | undefined>;
+  createGroup(group: InsertGroup): Promise<Group>;
+  updateGroup(id: string, group: Partial<InsertGroup>): Promise<Group | undefined>;
+  deleteGroup(id: string): Promise<boolean>;
 
   // Athletes
   getAthletes(): Promise<Athlete[]>;
@@ -87,21 +99,60 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  // Users
-  async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user || undefined;
+  // Levels
+  async getLevels(): Promise<Level[]> {
+    return await db.select().from(levels);
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user || undefined;
+  async getLevel(id: string): Promise<Level | undefined> {
+    const [level] = await db.select().from(levels).where(eq(levels.id, id));
+    return level || undefined;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
+  async createLevel(insertLevel: InsertLevel): Promise<Level> {
     const id = randomUUID();
-    const [user] = await db.insert(users).values({ ...insertUser, id }).returning();
-    return user;
+    const [level] = await db.insert(levels).values({ ...insertLevel, id }).returning();
+    return level;
+  }
+
+  async updateLevel(id: string, data: Partial<InsertLevel>): Promise<Level | undefined> {
+    const sanitized = stripUndefined(data);
+    if (Object.keys(sanitized).length === 0) return this.getLevel(id);
+    const [level] = await db.update(levels).set(sanitized).where(eq(levels.id, id)).returning();
+    return level || undefined;
+  }
+
+  async deleteLevel(id: string): Promise<boolean> {
+    const result = await db.delete(levels).where(eq(levels.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Groups
+  async getGroups(): Promise<Group[]> {
+    return await db.select().from(groups);
+  }
+
+  async getGroup(id: string): Promise<Group | undefined> {
+    const [group] = await db.select().from(groups).where(eq(groups.id, id));
+    return group || undefined;
+  }
+
+  async createGroup(insertGroup: InsertGroup): Promise<Group> {
+    const id = randomUUID();
+    const [group] = await db.insert(groups).values({ ...insertGroup, id }).returning();
+    return group;
+  }
+
+  async updateGroup(id: string, data: Partial<InsertGroup>): Promise<Group | undefined> {
+    const sanitized = stripUndefined(data);
+    if (Object.keys(sanitized).length === 0) return this.getGroup(id);
+    const [group] = await db.update(groups).set(sanitized).where(eq(groups.id, id)).returning();
+    return group || undefined;
+  }
+
+  async deleteGroup(id: string): Promise<boolean> {
+    const result = await db.delete(groups).where(eq(groups.id, id)).returning();
+    return result.length > 0;
   }
 
   // Athletes
