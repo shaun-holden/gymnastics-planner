@@ -35,7 +35,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Dumbbell, Search, Trash2, Edit, MoreHorizontal } from "lucide-react";
+import { Plus, Dumbbell, Search, Trash2, Edit, MoreHorizontal, X, Filter } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -140,6 +140,8 @@ export default function Skills() {
   const [editingSkill, setEditingSkill] = useState<Skill | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedEvent, setSelectedEvent] = useState<string>("all");
+  const [selectedValue, setSelectedValue] = useState<string>("all");
+  const [selectedGroup, setSelectedGroup] = useState<string>("all");
   const { toast } = useToast();
 
   const form = useForm<FormData>({
@@ -249,6 +251,9 @@ export default function Skills() {
     setIsDialogOpen(true);
   };
 
+  // Get unique skill groups from current skills
+  const allSkillGroups = Array.from(new Set(skills?.map(s => s.skillGroup).filter((g): g is string => g !== null && g !== undefined) || [])).sort();
+
   const filteredSkills = skills?.filter((skill) => {
     const numericValue = getSkillNumericValue(skill);
     const matchesSearch =
@@ -256,8 +261,18 @@ export default function Skills() {
       skill.value.toLowerCase().includes(searchQuery.toLowerCase()) ||
       numericValue.toString().includes(searchQuery);
     const matchesEvent = selectedEvent === "all" || skill.event === selectedEvent;
-    return matchesSearch && matchesEvent;
+    const matchesValue = selectedValue === "all" || skill.value === selectedValue;
+    const matchesGroup = selectedGroup === "all" || skill.skillGroup === selectedGroup;
+    return matchesSearch && matchesEvent && matchesValue && matchesGroup;
   });
+
+  const hasActiveFilters = searchQuery || selectedValue !== "all" || selectedGroup !== "all";
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setSelectedValue("all");
+    setSelectedGroup("all");
+  };
 
   const getSkillsByEvent = (event: string) =>
     filteredSkills?.filter((s) => s.event === event) || [];
@@ -479,8 +494,8 @@ export default function Skills() {
       </div>
 
       {/* Search and Filter */}
-      <div className="flex items-center gap-4 flex-wrap">
-        <div className="relative flex-1 max-w-md">
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="relative flex-1 min-w-[200px] max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search skills..."
@@ -489,6 +504,41 @@ export default function Skills() {
             className="pl-9"
             data-testid="input-search-skills"
           />
+        </div>
+        <Select value={selectedValue} onValueChange={setSelectedValue}>
+          <SelectTrigger className="w-[120px]" data-testid="select-filter-value">
+            <SelectValue placeholder="Value" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Values</SelectItem>
+            {SKILL_VALUES.map((val) => (
+              <SelectItem key={val} value={val}>
+                {val} ({SKILL_VALUE_MAP[val]})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={selectedGroup} onValueChange={setSelectedGroup}>
+          <SelectTrigger className="w-[180px]" data-testid="select-filter-group">
+            <SelectValue placeholder="Skill Group" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Groups</SelectItem>
+            {allSkillGroups.map((group) => (
+              <SelectItem key={group} value={group as string}>
+                {group}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {hasActiveFilters && (
+          <Button variant="ghost" size="sm" onClick={clearFilters} data-testid="button-clear-filters">
+            <X className="h-4 w-4 mr-1" />
+            Clear
+          </Button>
+        )}
+        <div className="text-sm text-muted-foreground ml-auto">
+          {filteredSkills?.length || 0} of {skills?.length || 0} skills
         </div>
       </div>
 
