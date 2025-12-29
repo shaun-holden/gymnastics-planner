@@ -35,7 +35,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Award, Trash2, Edit, MoreHorizontal, X, GripVertical, Calculator, ChevronRight, Link2, Search, Unlink, User } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Plus, Award, Trash2, Edit, MoreHorizontal, X, GripVertical, Calculator, ChevronRight, Link2, Search, Unlink, User, Info } from "lucide-react";
 import { ExportDropdown } from "@/components/export-dropdown";
 import { exportRoutines } from "@/lib/export-utils";
 import {
@@ -931,13 +936,49 @@ function RoutinePreview({ routine, skills, athlete }: { routine: Routine; skills
           </div>
         ) : (
           <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 rounded-md bg-muted/50">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">Difficulty Value (DV)</span>
-                <Badge variant="outline" className="text-xs">Top 8</Badge>
-              </div>
-              <span className="font-mono font-semibold">{difficultyValue.toFixed(1)}</span>
-            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button 
+                  className="w-full flex items-center justify-between p-3 rounded-md bg-muted/50 hover-elevate cursor-pointer text-left"
+                  data-testid="button-dv-breakdown"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">Difficulty Value (DV)</span>
+                    <Badge variant="outline" className="text-xs">Top 8</Badge>
+                    <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                  </div>
+                  <span className="font-mono font-semibold">{difficultyValue.toFixed(1)}</span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80" align="start">
+                <div className="space-y-2">
+                  <h4 className="font-medium text-sm">Top 8 Skills Counted</h4>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    {topSkills.length < 8 
+                      ? `Only ${topSkills.length} skill${topSkills.length === 1 ? '' : 's'} in routine`
+                      : routineSkills.length > 8 
+                        ? `Counting highest ${topSkills.length} of ${routineSkills.length} skills`
+                        : `All ${topSkills.length} skills counted`
+                    }
+                  </p>
+                  <div className="space-y-1.5 max-h-60 overflow-y-auto">
+                    {topSkills.map((skill, idx) => (
+                      <div key={idx} className="flex items-center justify-between gap-2 p-1.5 rounded bg-muted/50 text-sm">
+                        <span className="truncate flex-1">{skill.name}</span>
+                        <Badge variant="secondary" className="font-mono shrink-0">
+                          {getSkillDisplayValue(skill)}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                  <Separator className="my-2" />
+                  <div className="flex items-center justify-between font-medium">
+                    <span className="text-sm">Total DV</span>
+                    <span className="font-mono">{difficultyValue.toFixed(1)}</span>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
 
             {eventCRs.length > 0 && (
               <div className="p-3 rounded-md bg-muted/50 space-y-2">
