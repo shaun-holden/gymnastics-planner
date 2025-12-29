@@ -330,6 +330,30 @@ export async function registerRoutes(
     }
   });
 
+  // Admin: Force seed skills (useful for production)
+  app.post("/api/admin/seed-skills", async (req: Request, res: Response) => {
+    try {
+      const existingSkills = await storage.getSkills();
+      if (existingSkills.length > 0) {
+        return res.json({ 
+          message: `Database already has ${existingSkills.length} skills`,
+          seeded: false,
+          count: existingSkills.length
+        });
+      }
+      await storage.seedSkills();
+      const newSkills = await storage.getSkills();
+      res.json({ 
+        message: `Seeded ${newSkills.length} skills successfully`,
+        seeded: true,
+        count: newSkills.length
+      });
+    } catch (error) {
+      console.error("Failed to seed skills:", error);
+      res.status(500).json({ error: "Failed to seed skills", details: String(error) });
+    }
+  });
+
   // Curriculum CRUD
   app.get("/api/curriculum", async (req: Request, res: Response) => {
     try {
