@@ -88,6 +88,17 @@ shared/
 - Progress tracking with slider (0-100%)
 - Link goals to specific events
 
+### 6. Curriculum
+- Hierarchical skill progression planning: Program → Level → Event → Skill
+- Programs: Competitive, Recreational, TOPS, Xcel
+- Levels: 1-10, Elite, Bronze-Diamond
+- Timeline tracking with intro date, checkpoint date, and mastery target date
+- Status levels: Not Started, Introduced, In Progress, Checkpoint, Mastered
+- Progress tracking with auto-status updates based on percentage
+- Notes field for training observations
+- Dual view modes: Hierarchy (accordion) and Timeline (sorted by dates)
+- Overdue highlighting for skills past mastery target date
+
 ## Tech Stack
 - **Frontend**: React, TypeScript, TanStack Query, Wouter, Tailwind CSS
 - **UI Components**: Shadcn/ui, Radix primitives
@@ -126,6 +137,12 @@ shared/
 - `POST /api/routines` - Create routine
 - `PATCH /api/routines/:id` - Update routine
 - `DELETE /api/routines/:id` - Delete routine
+
+### Curriculum
+- `GET /api/curriculum` - List all curriculum items
+- `POST /api/curriculum` - Create curriculum item
+- `PATCH /api/curriculum/:id` - Update curriculum item
+- `DELETE /api/curriculum/:id` - Delete curriculum item
 
 ## Running the App
 ```bash
