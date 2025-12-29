@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
+import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
 import {
   insertAthleteSchema,
   insertSkillSchema,
@@ -19,8 +19,10 @@ export async function registerRoutes(
   // Setup auth BEFORE registering other routes
   await setupAuth(app);
   registerAuthRoutes(app);
+  
+  // All data routes require authentication
   // Athletes CRUD
-  app.get("/api/athletes", async (req: Request, res: Response) => {
+  app.get("/api/athletes", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const athletes = await storage.getAthletes();
       res.json(athletes);
@@ -29,7 +31,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/athletes/:id", async (req: Request, res: Response) => {
+  app.get("/api/athletes/:id", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const athlete = await storage.getAthlete(req.params.id);
       if (!athlete) {
@@ -41,7 +43,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/athletes", async (req: Request, res: Response) => {
+  app.post("/api/athletes", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const parsed = insertAthleteSchema.parse(req.body);
       const athlete = await storage.createAthlete(parsed);
@@ -54,7 +56,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/athletes/:id", async (req: Request, res: Response) => {
+  app.patch("/api/athletes/:id", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const parsed = insertAthleteSchema.partial().parse(req.body);
       const athlete = await storage.updateAthlete(req.params.id, parsed);
@@ -70,7 +72,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/athletes/:id", async (req: Request, res: Response) => {
+  app.delete("/api/athletes/:id", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const success = await storage.deleteAthlete(req.params.id);
       if (!success) {
@@ -83,7 +85,7 @@ export async function registerRoutes(
   });
 
   // Skills CRUD
-  app.get("/api/skills", async (req: Request, res: Response) => {
+  app.get("/api/skills", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const skills = await storage.getSkills();
       res.json(skills);
@@ -92,7 +94,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/skills/:id", async (req: Request, res: Response) => {
+  app.get("/api/skills/:id", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const skill = await storage.getSkill(req.params.id);
       if (!skill) {
@@ -104,7 +106,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/skills", async (req: Request, res: Response) => {
+  app.post("/api/skills", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const parsed = insertSkillSchema.parse(req.body);
       const skill = await storage.createSkill(parsed);
@@ -117,7 +119,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/skills/:id", async (req: Request, res: Response) => {
+  app.patch("/api/skills/:id", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const parsed = insertSkillSchema.partial().parse(req.body);
       const skill = await storage.updateSkill(req.params.id, parsed);
@@ -133,7 +135,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/skills/:id", async (req: Request, res: Response) => {
+  app.delete("/api/skills/:id", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const success = await storage.deleteSkill(req.params.id);
       if (!success) {
@@ -146,7 +148,7 @@ export async function registerRoutes(
   });
 
   // Practices CRUD
-  app.get("/api/practices", async (req: Request, res: Response) => {
+  app.get("/api/practices", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const practices = await storage.getPractices();
       res.json(practices);
@@ -155,7 +157,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/practices/:id", async (req: Request, res: Response) => {
+  app.get("/api/practices/:id", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const practice = await storage.getPractice(req.params.id);
       if (!practice) {
@@ -167,7 +169,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/practices", async (req: Request, res: Response) => {
+  app.post("/api/practices", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const parsed = insertPracticeSchema.parse(req.body);
       const practice = await storage.createPractice(parsed);
@@ -180,7 +182,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/practices/:id", async (req: Request, res: Response) => {
+  app.patch("/api/practices/:id", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const parsed = insertPracticeSchema.partial().parse(req.body);
       const practice = await storage.updatePractice(req.params.id, parsed);
@@ -196,7 +198,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/practices/:id", async (req: Request, res: Response) => {
+  app.delete("/api/practices/:id", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const success = await storage.deletePractice(req.params.id);
       if (!success) {
@@ -209,7 +211,7 @@ export async function registerRoutes(
   });
 
   // Goals CRUD
-  app.get("/api/goals", async (req: Request, res: Response) => {
+  app.get("/api/goals", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const goals = await storage.getGoals();
       res.json(goals);
@@ -218,7 +220,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/goals/:id", async (req: Request, res: Response) => {
+  app.get("/api/goals/:id", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const goal = await storage.getGoal(req.params.id);
       if (!goal) {
@@ -230,7 +232,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/goals", async (req: Request, res: Response) => {
+  app.post("/api/goals", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const parsed = insertGoalSchema.parse(req.body);
       const goal = await storage.createGoal(parsed);
@@ -243,7 +245,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/goals/:id", async (req: Request, res: Response) => {
+  app.patch("/api/goals/:id", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const parsed = insertGoalSchema.partial().parse(req.body);
       const goal = await storage.updateGoal(req.params.id, parsed);
@@ -259,7 +261,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/goals/:id", async (req: Request, res: Response) => {
+  app.delete("/api/goals/:id", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const success = await storage.deleteGoal(req.params.id);
       if (!success) {
@@ -272,7 +274,7 @@ export async function registerRoutes(
   });
 
   // Routines CRUD
-  app.get("/api/routines", async (req: Request, res: Response) => {
+  app.get("/api/routines", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const routines = await storage.getRoutines();
       res.json(routines);
@@ -281,7 +283,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/routines/:id", async (req: Request, res: Response) => {
+  app.get("/api/routines/:id", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const routine = await storage.getRoutine(req.params.id);
       if (!routine) {
@@ -293,7 +295,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/routines", async (req: Request, res: Response) => {
+  app.post("/api/routines", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const parsed = insertRoutineSchema.parse(req.body);
       const routine = await storage.createRoutine(parsed);
@@ -306,7 +308,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/routines/:id", async (req: Request, res: Response) => {
+  app.patch("/api/routines/:id", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const parsed = insertRoutineSchema.partial().parse(req.body);
       const routine = await storage.updateRoutine(req.params.id, parsed);
@@ -322,7 +324,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/routines/:id", async (req: Request, res: Response) => {
+  app.delete("/api/routines/:id", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const success = await storage.deleteRoutine(req.params.id);
       if (!success) {
@@ -335,7 +337,7 @@ export async function registerRoutes(
   });
 
   // Admin: Force seed skills (useful for production)
-  app.post("/api/admin/seed-skills", async (req: Request, res: Response) => {
+  app.post("/api/admin/seed-skills", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const existingSkills = await storage.getSkills();
       if (existingSkills.length > 0) {
@@ -359,7 +361,7 @@ export async function registerRoutes(
   });
 
   // Diagnostic endpoint to check database status
-  app.get("/api/admin/db-status", async (req: Request, res: Response) => {
+  app.get("/api/admin/db-status", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const skillCount = (await storage.getSkills()).length;
       const athleteCount = (await storage.getAthletes()).length;
@@ -391,7 +393,7 @@ export async function registerRoutes(
   });
 
   // Curriculum CRUD
-  app.get("/api/curriculum", async (req: Request, res: Response) => {
+  app.get("/api/curriculum", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const items = await storage.getCurriculumItems();
       res.json(items);
@@ -400,7 +402,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/curriculum/:id", async (req: Request, res: Response) => {
+  app.get("/api/curriculum/:id", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const item = await storage.getCurriculumItem(req.params.id);
       if (!item) {
@@ -412,7 +414,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/curriculum", async (req: Request, res: Response) => {
+  app.post("/api/curriculum", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const parsed = insertCurriculumSchema.parse(req.body);
       const item = await storage.createCurriculumItem(parsed);
@@ -425,7 +427,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/curriculum/:id", async (req: Request, res: Response) => {
+  app.patch("/api/curriculum/:id", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const parsed = insertCurriculumSchema.partial().parse(req.body);
       const item = await storage.updateCurriculumItem(req.params.id, parsed);
@@ -441,7 +443,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/curriculum/:id", async (req: Request, res: Response) => {
+  app.delete("/api/curriculum/:id", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const success = await storage.deleteCurriculumItem(req.params.id);
       if (!success) {
