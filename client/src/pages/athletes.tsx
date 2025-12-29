@@ -552,14 +552,17 @@ export default function Athletes() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Training Group (Optional)</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value || ""}>
+                            <Select 
+                              onValueChange={(val) => field.onChange(val === "__none__" ? undefined : val)} 
+                              value={field.value || "__none__"}
+                            >
                               <FormControl>
                                 <SelectTrigger data-testid="select-group">
                                   <SelectValue placeholder="No group assigned" />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="">No group</SelectItem>
+                                <SelectItem value="__none__">No group</SelectItem>
                                 {groups?.map((group) => (
                                   <SelectItem key={group.id} value={group.id}>
                                     <div className="flex items-center gap-2">
@@ -736,14 +739,17 @@ export default function Athletes() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Competitive System (Optional)</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value || ""}>
+                          <Select 
+                            onValueChange={(val) => field.onChange(val === "__all__" ? undefined : val)} 
+                            value={field.value || "__all__"}
+                          >
                             <FormControl>
                               <SelectTrigger data-testid="select-level-system">
                                 <SelectValue placeholder="Available for all systems" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="">All Systems</SelectItem>
+                              <SelectItem value="__all__">All Systems</SelectItem>
                               {COMPETITIVE_SYSTEMS.map((system) => (
                                 <SelectItem key={system} value={system}>
                                   {system}
