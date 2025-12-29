@@ -403,13 +403,25 @@ export default function Routines() {
   };
 
   const addSkillToRoutine = (skillId: string) => {
-    if (!selectedSkillIds.includes(skillId)) {
+    // For Bars, allow adding the same skill multiple times (e.g., for double skills)
+    if (selectedEvent === "Bars") {
       setSelectedSkillIds([...selectedSkillIds, skillId]);
+    } else {
+      // For other events, only add if not already present
+      if (!selectedSkillIds.includes(skillId)) {
+        setSelectedSkillIds([...selectedSkillIds, skillId]);
+      }
     }
   };
 
-  const removeSkillFromRoutine = (skillId: string) => {
-    setSelectedSkillIds(selectedSkillIds.filter((id) => id !== skillId));
+  const removeSkillFromRoutine = (index: number) => {
+    // Remove skill at specific index (needed for handling duplicates)
+    setSelectedSkillIds(selectedSkillIds.filter((_, i) => i !== index));
+  };
+
+  // Count how many times each skill appears in the routine
+  const getSkillCount = (skillId: string) => {
+    return selectedSkillIds.filter(id => id === skillId).length;
   };
 
   // Reset selected skills when event changes
@@ -531,22 +543,43 @@ export default function Routines() {
                       <ScrollArea className="h-[250px] px-4 pb-4">
                         {eventSkills.length > 0 ? (
                           <div className="space-y-2">
-                            {eventSkills.map((skill) => (
-                              <div
-                                key={skill.id}
-                                className="flex items-center justify-between p-2 rounded-md bg-muted/50 hover-elevate cursor-pointer"
-                                onClick={() => addSkillToRoutine(skill.id)}
-                                data-testid={`available-skill-${skill.id}`}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <Badge variant="secondary" className="text-xs">
-                                    {getSkillDisplayValue(skill)}
-                                  </Badge>
-                                  <span className="text-sm">{skill.name}</span>
+                            {eventSkills.map((skill) => {
+                              const count = getSkillCount(skill.id);
+                              const isInRoutine = count > 0;
+                              const isDouble = count >= 2;
+                              return (
+                                <div
+                                  key={skill.id}
+                                  className={`flex items-center justify-between p-2 rounded-md hover-elevate cursor-pointer ${
+                                    isDouble 
+                                      ? "bg-amber-100 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700" 
+                                      : isInRoutine 
+                                        ? "bg-primary/10 border border-primary/20" 
+                                        : "bg-muted/50"
+                                  }`}
+                                  onClick={() => addSkillToRoutine(skill.id)}
+                                  data-testid={`available-skill-${skill.id}`}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant="secondary" className="text-xs">
+                                      {getSkillDisplayValue(skill)}
+                                    </Badge>
+                                    <span className="text-sm">{skill.name}</span>
+                                    {isDouble && (
+                                      <Badge variant="outline" className="text-xs bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 border-amber-400">
+                                        x{count}
+                                      </Badge>
+                                    )}
+                                    {isInRoutine && !isDouble && (
+                                      <Badge variant="outline" className="text-xs">
+                                        In routine
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <Plus className="h-4 w-4 text-muted-foreground" />
                                 </div>
-                                <Plus className="h-4 w-4 text-muted-foreground" />
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         ) : (
                           <p className="text-sm text-muted-foreground text-center py-4">
@@ -571,10 +604,25 @@ export default function Routines() {
                           <div className="space-y-1">
                             {(() => {
                               const connections = calculateConnections(selectedSkills, selectedEvent);
-                              return selectedSkills.map((skill, idx) => (
+                              // Track which skills appear multiple times
+                              const skillOccurrences: Record<string, number[]> = {};
+                              selectedSkillIds.forEach((id, i) => {
+                                if (!skillOccurrences[id]) skillOccurrences[id] = [];
+                                skillOccurrences[id].push(i);
+                              });
+                              
+                              return selectedSkills.map((skill, idx) => {
+                                const isDuplicate = skillOccurrences[skill.id]?.length >= 2;
+                                const occurrenceNum = skillOccurrences[skill.id]?.indexOf(idx) + 1;
+                                
+                                return (
                                 <div key={`${skill.id}-${idx}`}>
                                   <div
-                                    className="flex items-center justify-between p-2 rounded-md bg-primary/5 border border-primary/10"
+                                    className={`flex items-center justify-between p-2 rounded-md ${
+                                      isDuplicate 
+                                        ? "bg-amber-100 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700" 
+                                        : "bg-primary/5 border border-primary/10"
+                                    }`}
                                     data-testid={`selected-skill-${idx}`}
                                   >
                                     <div className="flex items-center gap-2">
@@ -586,13 +634,18 @@ export default function Routines() {
                                         {getSkillDisplayValue(skill)}
                                       </Badge>
                                       <span className="text-sm">{skill.name}</span>
+                                      {isDuplicate && (
+                                        <Badge variant="outline" className="text-xs bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 border-amber-400">
+                                          #{occurrenceNum}
+                                        </Badge>
+                                      )}
                                     </div>
                                     <Button
                                       type="button"
                                       variant="ghost"
                                       size="icon"
                                       className="h-6 w-6"
-                                      onClick={() => removeSkillFromRoutine(skill.id)}
+                                      onClick={() => removeSkillFromRoutine(idx)}
                                     >
                                       <X className="h-3 w-3" />
                                     </Button>
@@ -613,7 +666,8 @@ export default function Routines() {
                                     </div>
                                   )}
                                 </div>
-                              ));
+                              );
+                              });
                             })()}
                           </div>
                         ) : (
