@@ -35,15 +35,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Award, Trash2, Edit, MoreHorizontal, X, GripVertical, Calculator, ChevronRight } from "lucide-react";
+import { Plus, Award, Trash2, Edit, MoreHorizontal, X, GripVertical, Calculator, ChevronRight, Link2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { Routine, Skill, Athlete, InsertRoutine } from "@shared/schema";
-import { EVENTS, SKILL_VALUE_MAP, SKILL_GROUPS_BY_EVENT, CR_BY_EVENT, calculateStartValue, getSkillNumericValue } from "@shared/schema";
+import type { Routine, Skill, Athlete, InsertRoutine, ConnectionInfo } from "@shared/schema";
+import { EVENTS, SKILL_VALUE_MAP, SKILL_GROUPS_BY_EVENT, CR_BY_EVENT, calculateStartValue, calculateConnections, getSkillNumericValue } from "@shared/schema";
 
 function getSkillDisplayValue(skill: Skill): string {
   if (skill.event === "Vault" && skill.vaultValue !== null && skill.vaultValue !== undefined) {
@@ -62,10 +62,11 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 function StartValueCalculator({ skills, event }: { skills: Skill[]; event: string }) {
-  const { startValue, crFulfilled, cvBonus, topSkills, groupBonus, groupsPresent, crBonus, crTagsPresent } = calculateStartValue(skills, event);
+  const { startValue, crFulfilled, cvBonus, topSkills, groupBonus, groupsPresent, crBonus, crTagsPresent, connections } = calculateStartValue(skills, event);
   const isVault = event === "Vault";
   const eventGroups = SKILL_GROUPS_BY_EVENT[event] || [];
   const eventCRs = CR_BY_EVENT[event] || [];
+  const activeConnections = connections.filter(c => c.isConnected);
 
   const difficultyValue = topSkills.reduce((sum, skill) => {
     return sum + getSkillNumericValue(skill);
@@ -156,9 +157,29 @@ function StartValueCalculator({ skills, event }: { skills: Skill[]; event: strin
             </div>
           )}
 
-          <div className="flex items-center justify-between p-3 rounded-md bg-muted/50">
-            <span className="text-sm">Connection Value (CV)</span>
-            <span className="font-mono font-medium">+{cvBonus.toFixed(1)}</span>
+          <div className="p-3 rounded-md bg-muted/50 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-sm">Connection Value (CV)</span>
+                <Badge variant="secondary" className="text-xs">{activeConnections.length} connections</Badge>
+              </div>
+              <span className="font-mono font-medium">+{cvBonus.toFixed(1)}</span>
+            </div>
+            {activeConnections.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {activeConnections.map((conn, idx) => (
+                  <Badge key={idx} variant="outline" className="text-xs">
+                    <Link2 className="h-2.5 w-2.5 mr-1" />
+                    {conn.label}
+                  </Badge>
+                ))}
+              </div>
+            )}
+            {activeConnections.length === 0 && skills.length >= 2 && (
+              <p className="text-xs text-muted-foreground">
+                Connect B+ skills to earn CV bonus
+              </p>
+            )}
           </div>
 
           <Separator />
@@ -171,7 +192,7 @@ function StartValueCalculator({ skills, event }: { skills: Skill[]; event: strin
           </div>
 
           <p className="text-xs text-muted-foreground">
-            DV = Top 8 skills. Group Bonus = 0.5 per group (max 2.0). CR = 0.5 per requirement (max 2.0). CV = 0.1 per consecutive C+ pair.
+            DV = Top 8 skills. Group = 0.5/group (max 2.0). CR = 0.5/req (max 2.0). CV = FIG bonuses (D+D=0.1, D+E/E+D=0.2, etc).
           </p>
         </div>
       )}
@@ -547,34 +568,53 @@ export default function Routines() {
                     <CardContent className="flex-1 p-0 overflow-hidden">
                       <ScrollArea className="h-[250px] px-4 pb-4">
                         {selectedSkills.length > 0 ? (
-                          <div className="space-y-2">
-                            {selectedSkills.map((skill, idx) => (
-                              <div
-                                key={`${skill.id}-${idx}`}
-                                className="flex items-center justify-between p-2 rounded-md bg-primary/5 border border-primary/10"
-                                data-testid={`selected-skill-${idx}`}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <GripVertical className="h-4 w-4 text-muted-foreground" />
-                                  <span className="text-xs font-mono text-muted-foreground w-4">
-                                    {idx + 1}
-                                  </span>
-                                  <Badge variant="default" className="text-xs">
-                                    {getSkillDisplayValue(skill)}
-                                  </Badge>
-                                  <span className="text-sm">{skill.name}</span>
+                          <div className="space-y-1">
+                            {(() => {
+                              const connections = calculateConnections(selectedSkills, selectedEvent);
+                              return selectedSkills.map((skill, idx) => (
+                                <div key={`${skill.id}-${idx}`}>
+                                  <div
+                                    className="flex items-center justify-between p-2 rounded-md bg-primary/5 border border-primary/10"
+                                    data-testid={`selected-skill-${idx}`}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <GripVertical className="h-4 w-4 text-muted-foreground" />
+                                      <span className="text-xs font-mono text-muted-foreground w-4">
+                                        {idx + 1}
+                                      </span>
+                                      <Badge variant="default" className="text-xs">
+                                        {getSkillDisplayValue(skill)}
+                                      </Badge>
+                                      <span className="text-sm">{skill.name}</span>
+                                    </div>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6"
+                                      onClick={() => removeSkillFromRoutine(skill.id)}
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                  {/* Connection indicator between skills */}
+                                  {idx < selectedSkills.length - 1 && (
+                                    <div className="flex items-center justify-center py-0.5">
+                                      {connections[idx]?.isConnected ? (
+                                        <div className="flex items-center gap-1 text-xs">
+                                          <Link2 className="h-3 w-3 text-green-600 dark:text-green-400" />
+                                          <span className="text-green-600 dark:text-green-400 font-mono font-medium">
+                                            {connections[idx].label}
+                                          </span>
+                                        </div>
+                                      ) : (
+                                        <div className="w-0.5 h-2 bg-muted-foreground/20 rounded" />
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-6 w-6"
-                                  onClick={() => removeSkillFromRoutine(skill.id)}
-                                >
-                                  <X className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            ))}
+                              ));
+                            })()}
                           </div>
                         ) : (
                           <p className="text-sm text-muted-foreground text-center py-4">

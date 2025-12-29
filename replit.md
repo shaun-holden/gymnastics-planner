@@ -75,7 +75,10 @@ shared/
       - **Bars**: Flight HB to LB, Flight same bar, Different grips, Non-flight 360° turn
       - **Beam**: Dance connection (2+ elements, 1 with 180° split), Turn/Roll/Flairs, Acro series (2 flight, 1 salto), Acro in different directions
       - **Floor**: Dance passage (2 leaps/hops, 1 with 180° split), Salto with LA turn (360°+), Salto with double BA, Salto bwd and fwd (no aerials)
-    - Connection Value (CV) bonus for consecutive C+ skills
+    - **Connection Value (CV)** = FIG-compliant bonuses for skill connections
+      - **Bars**: D+D=0.1, D+E/E+D/E+E=0.2
+      - **Beam/Floor**: B+C/C+B=0.1, C+C=0.1, C+D/D+C/D+D/D+E/E+D/E+E=0.2
+    - Visual connection indicators (link icons) between connected skills
 - Live preview of start value while building
 
 ### 5. Goals

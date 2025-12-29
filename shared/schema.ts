@@ -83,6 +83,48 @@ export const SKILL_VALUE_MAP: Record<SkillValue, number> = {
   I: 0.9,
 };
 
+// Connection Value (CV) Bonus Rules per Event (FIG Code of Points 2025-2028)
+// Each entry defines: [minValue1, minValue2, bonus]
+export const CV_RULES_BARS = [
+  { min1: "D", min2: "D", bonus: 0.1, label: "D+D" },
+  { min1: "D", min2: "E", bonus: 0.2, label: "D+E or higher" },
+  { min1: "E", min2: "D", bonus: 0.2, label: "E+D or higher" },
+  { min1: "E", min2: "E", bonus: 0.2, label: "E+E or higher" },
+] as const;
+
+export const CV_RULES_BEAM = [
+  // FIG-compliant Beam connections (acro and dance treated similarly)
+  { min1: "B", min2: "C", bonus: 0.1, label: "B+C" },
+  { min1: "C", min2: "B", bonus: 0.1, label: "C+B" },
+  { min1: "C", min2: "C", bonus: 0.1, label: "C+C" },
+  { min1: "C", min2: "D", bonus: 0.2, label: "C+D" },
+  { min1: "D", min2: "C", bonus: 0.2, label: "D+C" },
+  { min1: "D", min2: "D", bonus: 0.2, label: "D+D" },
+  { min1: "D", min2: "E", bonus: 0.2, label: "D+E" },
+  { min1: "E", min2: "D", bonus: 0.2, label: "E+D" },
+  { min1: "E", min2: "E", bonus: 0.2, label: "E+E" },
+] as const;
+
+export const CV_RULES_FLOOR = [
+  // FIG-compliant Floor tumbling connections
+  { min1: "B", min2: "C", bonus: 0.1, label: "B+C" },
+  { min1: "C", min2: "B", bonus: 0.1, label: "C+B" },
+  { min1: "C", min2: "C", bonus: 0.1, label: "C+C" },
+  { min1: "C", min2: "D", bonus: 0.2, label: "C+D" },
+  { min1: "D", min2: "C", bonus: 0.2, label: "D+C" },
+  { min1: "D", min2: "D", bonus: 0.2, label: "D+D" },
+  { min1: "D", min2: "E", bonus: 0.2, label: "D+E" },
+  { min1: "E", min2: "D", bonus: 0.2, label: "E+D" },
+  { min1: "E", min2: "E", bonus: 0.2, label: "E+E" },
+] as const;
+
+export type ConnectionInfo = {
+  index: number;
+  isConnected: boolean;
+  bonus: number;
+  label: string;
+};
+
 // Athletes Table
 export const athletes = pgTable("athletes", {
   id: varchar("id").primaryKey(),
@@ -181,11 +223,69 @@ export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
+// Helper function to get CV bonus for a pair of skills based on event-specific rules
+// Uses the CV_RULES constants to ensure FIG compliance
+function getConnectionBonus(skill1: Skill, skill2: Skill, event: string): { bonus: number; label: string } {
+  const val1 = skill1.value as SkillValue;
+  const val2 = skill2.value as SkillValue;
+  
+  // Get the appropriate rules for the event
+  let rules: readonly { min1: string; min2: string; bonus: number; label: string }[];
+  if (event === "Bars") {
+    rules = CV_RULES_BARS;
+  } else if (event === "Beam") {
+    rules = CV_RULES_BEAM;
+  } else if (event === "Floor") {
+    rules = CV_RULES_FLOOR;
+  } else {
+    return { bonus: 0, label: "" };
+  }
+  
+  // Find the best matching rule (highest bonus first)
+  // Sort rules by bonus descending to find best match
+  const sortedRules = [...rules].sort((a, b) => b.bonus - a.bonus);
+  
+  for (const rule of sortedRules) {
+    const minVal1 = SKILL_VALUE_MAP[rule.min1 as SkillValue] || 0;
+    const minVal2 = SKILL_VALUE_MAP[rule.min2 as SkillValue] || 0;
+    const skillVal1 = SKILL_VALUE_MAP[val1] || 0;
+    const skillVal2 = SKILL_VALUE_MAP[val2] || 0;
+    
+    if (skillVal1 >= minVal1 && skillVal2 >= minVal2) {
+      return { bonus: rule.bonus, label: rule.label };
+    }
+  }
+
+  return { bonus: 0, label: "" };
+}
+
+// Calculate connections between skills in routine order
+export function calculateConnections(skills: Skill[], event: string): ConnectionInfo[] {
+  const connections: ConnectionInfo[] = [];
+  
+  if (event === "Vault" || skills.length < 2) {
+    return connections;
+  }
+
+  for (let i = 0; i < skills.length - 1; i++) {
+    const { bonus, label } = getConnectionBonus(skills[i], skills[i + 1], event);
+    connections.push({
+      index: i,
+      isConnected: bonus > 0,
+      bonus,
+      label: bonus > 0 ? `+${bonus.toFixed(1)} (${label})` : "",
+    });
+  }
+
+  return connections;
+}
+
 // Helper function to calculate start value
 // For Vault: uses the vault's numeric value directly
 // For Bars/Beam/Floor: counts only TOP 8 skills (highest values first)
 // Group bonus: 0.5 per group represented (max 2.0 for all 4 groups)
 // CR bonus: 0.5 per composition requirement met (max 2.0)
+// CV bonus: FIG-compliant connection bonuses
 export function calculateStartValue(skills: Skill[], event?: string): { 
   startValue: number; 
   crFulfilled: boolean; 
@@ -195,9 +295,10 @@ export function calculateStartValue(skills: Skill[], event?: string): {
   groupsPresent: string[];
   crBonus: number;
   crTagsPresent: string[];
+  connections: ConnectionInfo[];
 } {
   if (skills.length === 0) {
-    return { startValue: 0, crFulfilled: false, cvBonus: 0, topSkills: [], groupBonus: 0, groupsPresent: [], crBonus: 0, crTagsPresent: [] };
+    return { startValue: 0, crFulfilled: false, cvBonus: 0, topSkills: [], groupBonus: 0, groupsPresent: [], crBonus: 0, crTagsPresent: [], connections: [] };
   }
 
   // For Vault, just return the vault value directly
@@ -213,8 +314,11 @@ export function calculateStartValue(skills: Skill[], event?: string): {
       groupsPresent: [],
       crBonus: 0,
       crTagsPresent: [],
+      connections: [],
     };
   }
+
+  const currentEvent = event || (skills.length > 0 ? skills[0].event : "");
 
   // For Bars/Beam/Floor: Sort by value and take top 8
   const sortedSkills = [...skills].sort((a, b) => {
@@ -237,7 +341,6 @@ export function calculateStartValue(skills: Skill[], event?: string): {
 
   // CR bonus: Check which composition requirements are fulfilled for this event
   // 0.5 points per CR, max 2.0 (all 4 CRs) - applies to Bars, Beam, Floor
-  const currentEvent = event || (skills.length > 0 ? skills[0].event : "");
   const eventCRIds = (CR_BY_EVENT[currentEvent] || []).map(cr => cr.id);
   const allCrTags = skills.flatMap(s => s.crTags || []);
   const validCrTags = allCrTags.filter(tag => eventCRIds.includes(tag));
@@ -245,17 +348,10 @@ export function calculateStartValue(skills: Skill[], event?: string): {
   const crBonus = Math.min(crTagsPresent.length * 0.5, 2.0);
   const crFulfilled = crTagsPresent.length >= 4;
 
-  // CV (Connection Value) - bonus for connected skills
-  // Simplified: give 0.1 bonus for each consecutive pair of C+ skills
+  // CV (Connection Value) - FIG-compliant bonuses based on event
   // Use original skill order for connection value
-  let cvBonus = 0;
-  for (let i = 0; i < skills.length - 1; i++) {
-    const currentValue = SKILL_VALUE_MAP[skills[i].value as SkillValue] || 0;
-    const nextValue = SKILL_VALUE_MAP[skills[i + 1].value as SkillValue] || 0;
-    if (currentValue >= 0.3 && nextValue >= 0.3) {
-      cvBonus += 0.1;
-    }
-  }
+  const connections = calculateConnections(skills, currentEvent);
+  const cvBonus = connections.reduce((sum, conn) => sum + conn.bonus, 0);
 
   const startValue = difficultyValue + groupBonus + crBonus + cvBonus;
 
@@ -268,5 +364,6 @@ export function calculateStartValue(skills: Skill[], event?: string): {
     groupsPresent,
     crBonus: Math.round(crBonus * 100) / 100,
     crTagsPresent,
+    connections,
   };
 }
