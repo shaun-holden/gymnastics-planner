@@ -157,6 +157,24 @@ export const barsSkills: InsertSkill[] = [
   { name: "Double salto forward piked", value: "E", event: "Bars", skillGroup: "Dismounts", crTags: [] },
   { name: "Salto fwd stretched with 1/1 twist", value: "C", event: "Bars", skillGroup: "Dismounts", crTags: [] },
   { name: "Salto fwd stretched with 2/1 twist", value: "D", event: "Bars", skillGroup: "Dismounts", crTags: [] },
+  
+  // Additional Bars Skills (FIG 2025-2028)
+  { name: "Kip to handstand", value: "B", event: "Bars", skillGroup: "Cast/Handstand", crTags: [] },
+  { name: "Stalder backward with 1/2 turn to hstd", value: "C", event: "Bars", skillGroup: "Cast/Handstand", crTags: [] },
+  { name: "Stalder forward to hstd", value: "D", event: "Bars", skillGroup: "Cast/Handstand", crTags: [] },
+  { name: "Toe-on circle backward with 1/2 turn to hstd", value: "C", event: "Bars", skillGroup: "Cast/Handstand", crTags: [] },
+  { name: "Toe-on circle forward to hstd", value: "D", event: "Bars", skillGroup: "Cast/Handstand", crTags: [] },
+  { name: "Inbar stalder to hstd", value: "D", event: "Bars", skillGroup: "Cast/Handstand", crTags: [] },
+  { name: "Inbar toe-on to hstd", value: "D", event: "Bars", skillGroup: "Cast/Handstand", crTags: [] },
+  { name: "Endo circle to hstd", value: "D", event: "Bars", skillGroup: "Cast/Handstand", crTags: [] },
+  { name: "Tkatchev stretched (Ezhova)", value: "E", event: "Bars", skillGroup: "Release Moves", crTags: ["same_bar_flight"] },
+  { name: "Ray (straddled Jaeger with 1/2 turn)", value: "E", event: "Bars", skillGroup: "Release Moves", crTags: ["same_bar_flight"] },
+  { name: "Piked Tkatchev (Hindorff piked)", value: "E", event: "Bars", skillGroup: "Release Moves", crTags: ["same_bar_flight"] },
+  { name: "Shaposhnikova with 1/1 turn (Maloney)", value: "E", event: "Bars", skillGroup: "Release Moves", crTags: ["hb_to_lb_flight"] },
+  { name: "Counter Kim (toe-on Tkatchev)", value: "E", event: "Bars", skillGroup: "Release Moves", crTags: ["same_bar_flight"] },
+  { name: "Double salto backward tucked with 1/2 twist", value: "E", event: "Bars", skillGroup: "Dismounts", crTags: [] },
+  { name: "Double front tucked with 1/2 twist", value: "E", event: "Bars", skillGroup: "Dismounts", crTags: [] },
+  { name: "Triple back tucked (Biles)", value: "H", event: "Bars", skillGroup: "Dismounts", crTags: [] },
 ];
 
 export const beamSkills: InsertSkill[] = [
@@ -274,6 +292,73 @@ export const beamSkills: InsertSkill[] = [
   { name: "Front salto stretched with 1/1 twist dismount", value: "D", event: "Beam", skillGroup: "Dismounts", crTags: [] },
   { name: "Double front tucked dismount", value: "E", event: "Beam", skillGroup: "Dismounts", crTags: [] },
   { name: "Arabian double front tucked dismount", value: "F", event: "Beam", skillGroup: "Dismounts", crTags: [] },
+  
+  // Additional Beam Skills (FIG 2025-2028)
+  // More Dance/Leaps
+  { name: "Stag leap", value: "A", event: "Beam", skillGroup: "Dance/Leaps", crTags: ["dance_connection"] },
+  { name: "Stag ring leap", value: "C", event: "Beam", skillGroup: "Dance/Leaps", crTags: ["dance_connection"] },
+  { name: "Double stag leap", value: "B", event: "Beam", skillGroup: "Dance/Leaps", crTags: ["dance_connection"] },
+  { name: "Split leap with leg change", value: "C", event: "Beam", skillGroup: "Dance/Leaps", crTags: ["dance_connection"] },
+  { name: "Split leap with ring position", value: "C", event: "Beam", skillGroup: "Dance/Leaps", crTags: ["dance_connection"] },
+  { name: "Wolf jump with 3/1 turn", value: "E", event: "Beam", skillGroup: "Dance/Leaps", crTags: [] },
+  { name: "Split leap with 3/4 turn", value: "C", event: "Beam", skillGroup: "Dance/Leaps", crTags: ["dance_connection"] },
+  { name: "Switch leap ring", value: "D", event: "Beam", skillGroup: "Dance/Leaps", crTags: ["dance_connection"] },
+  { name: "Cross split leap", value: "C", event: "Beam", skillGroup: "Dance/Leaps", crTags: ["dance_connection"] },
+  { name: "Stretched jump with 1/1 turn", value: "A", event: "Beam", skillGroup: "Dance/Leaps", crTags: [] },
+  { name: "Stretched jump with 2/1 turn", value: "B", event: "Beam", skillGroup: "Dance/Leaps", crTags: [] },
+  { name: "Sheep jump with 1/2 turn", value: "B", event: "Beam", skillGroup: "Dance/Leaps", crTags: [] },
+  { name: "Cat leap with 1/2 turn", value: "A", event: "Beam", skillGroup: "Dance/Leaps", crTags: [] },
+  { name: "Cat leap with 1/1 turn", value: "B", event: "Beam", skillGroup: "Dance/Leaps", crTags: [] },
+  { name: "Popa (switch leap 1/4 turn to cross split)", value: "E", event: "Beam", skillGroup: "Dance/Leaps", crTags: ["dance_connection"] },
+  { name: "Kochetkova (switch leap 1/4 to ring)", value: "E", event: "Beam", skillGroup: "Dance/Leaps", crTags: ["dance_connection"] },
+  
+  // More Turns
+  { name: "3.5/1 turn (1260°)", value: "F", event: "Beam", skillGroup: "Dance/Leaps", crTags: ["turn_or_roll"] },
+  { name: "4/1 turn (1440°)", value: "F", event: "Beam", skillGroup: "Dance/Leaps", crTags: ["turn_or_roll"] },
+  { name: "L-turn 1.5/1 (540°)", value: "C", event: "Beam", skillGroup: "Dance/Leaps", crTags: ["turn_or_roll"] },
+  { name: "Y-turn 1.5/1 (540°)", value: "D", event: "Beam", skillGroup: "Dance/Leaps", crTags: ["turn_or_roll"] },
+  { name: "Illusion turn 2/1", value: "C", event: "Beam", skillGroup: "Dance/Leaps", crTags: ["turn_or_roll"] },
+  { name: "Fouette turn 1/1", value: "B", event: "Beam", skillGroup: "Dance/Leaps", crTags: ["turn_or_roll"] },
+  { name: "Fouette turn 2/1", value: "C", event: "Beam", skillGroup: "Dance/Leaps", crTags: ["turn_or_roll"] },
+  { name: "Wolf turn 1/1", value: "B", event: "Beam", skillGroup: "Dance/Leaps", crTags: ["turn_or_roll"] },
+  { name: "Wolf turn 2/1", value: "C", event: "Beam", skillGroup: "Dance/Leaps", crTags: ["turn_or_roll"] },
+  { name: "Wolf turn 3/1", value: "D", event: "Beam", skillGroup: "Dance/Leaps", crTags: ["turn_or_roll"] },
+  { name: "Tuck turn 1/1", value: "A", event: "Beam", skillGroup: "Dance/Leaps", crTags: ["turn_or_roll"] },
+  { name: "Tuck turn 2/1", value: "C", event: "Beam", skillGroup: "Dance/Leaps", crTags: ["turn_or_roll"] },
+  { name: "Backward roll", value: "A", event: "Beam", skillGroup: "Dance/Leaps", crTags: ["turn_or_roll"] },
+  { name: "Forward roll", value: "A", event: "Beam", skillGroup: "Dance/Leaps", crTags: ["turn_or_roll"] },
+  
+  // More Acrobatic
+  { name: "Round-off", value: "A", event: "Beam", skillGroup: "Acrobatic", crTags: [] },
+  { name: "Flic-flac series (2 flic-flacs)", value: "C", event: "Beam", skillGroup: "Acrobatic", crTags: ["acro_series"] },
+  { name: "Flic-flac to 2 feet", value: "B", event: "Beam", skillGroup: "Acrobatic", crTags: ["acro_series"] },
+  { name: "Gainer flic-flac", value: "D", event: "Beam", skillGroup: "Acrobatic", crTags: ["acro_series"] },
+  { name: "Back salto tucked step-out", value: "C", event: "Beam", skillGroup: "Acrobatic", crTags: ["acro_series"] },
+  { name: "Back salto piked step-out", value: "D", event: "Beam", skillGroup: "Acrobatic", crTags: ["acro_series"] },
+  { name: "Back 2.25 salto to cross sit (Thomas)", value: "F", event: "Beam", skillGroup: "Acrobatic", crTags: ["acro_series"] },
+  { name: "Front tuck connected to back handspring", value: "D", event: "Beam", skillGroup: "Acrobatic", crTags: ["acro_directions", "acro_series"] },
+  { name: "Barani (front salto with 1/2 twist)", value: "D", event: "Beam", skillGroup: "Acrobatic", crTags: ["acro_directions", "acro_series"] },
+  { name: "Whip back (tempo salto)", value: "C", event: "Beam", skillGroup: "Acrobatic", crTags: ["acro_series"] },
+  { name: "Side salto tucked", value: "D", event: "Beam", skillGroup: "Acrobatic", crTags: ["acro_directions", "acro_series"] },
+  { name: "Side salto stretched", value: "E", event: "Beam", skillGroup: "Acrobatic", crTags: ["acro_directions", "acro_series"] },
+  { name: "Patterson (back salto layout with 1/2 twist step-out)", value: "E", event: "Beam", skillGroup: "Acrobatic", crTags: ["acro_series"] },
+  
+  // More Mounts
+  { name: "Flip-flac mount from end of beam", value: "B", event: "Beam", skillGroup: "Mounts", crTags: [] },
+  { name: "Double back tucked mount (from springboard)", value: "E", event: "Beam", skillGroup: "Mounts", crTags: [] },
+  { name: "Full-twisting back mount", value: "D", event: "Beam", skillGroup: "Mounts", crTags: [] },
+  { name: "Yurchenko mount", value: "C", event: "Beam", skillGroup: "Mounts", crTags: [] },
+  
+  // More Dismounts
+  { name: "Gainer double back tucked dismount", value: "F", event: "Beam", skillGroup: "Dismounts", crTags: [] },
+  { name: "Gainer with 3/1 twist dismount", value: "F", event: "Beam", skillGroup: "Dismounts", crTags: [] },
+  { name: "Triple twist dismount", value: "F", event: "Beam", skillGroup: "Dismounts", crTags: [] },
+  { name: "Double back stretched with 2/1 twist dismount (Biles)", value: "H", event: "Beam", skillGroup: "Dismounts", crTags: [] },
+  { name: "Front double tucked with 1/2 twist dismount", value: "F", event: "Beam", skillGroup: "Dismounts", crTags: [] },
+  { name: "Side aerial with 1/4 turn dismount", value: "B", event: "Beam", skillGroup: "Dismounts", crTags: [] },
+  { name: "Back handspring full twist dismount", value: "B", event: "Beam", skillGroup: "Dismounts", crTags: [] },
+  { name: "Arabian salto dismount", value: "C", event: "Beam", skillGroup: "Dismounts", crTags: [] },
+  { name: "Punch front salto tucked dismount", value: "B", event: "Beam", skillGroup: "Dismounts", crTags: [] },
 ];
 
 export const floorSkills: InsertSkill[] = [
@@ -376,6 +461,62 @@ export const floorSkills: InsertSkill[] = [
   { name: "Back 1.5 stretched (dismount connection)", value: "C", event: "Floor", skillGroup: "Dismounts", crTags: [] },
   { name: "Back 1.5 stretched with 1/1 twist", value: "D", event: "Floor", skillGroup: "Dismounts", crTags: ["salto_la_turn"] },
   { name: "Back 1.5 stretched with 2/1 twist (Rudi out)", value: "E", event: "Floor", skillGroup: "Dismounts", crTags: ["salto_la_turn"] },
+  
+  // Additional Floor Skills (FIG 2025-2028)
+  // More Dance/Leaps
+  { name: "Stag leap", value: "A", event: "Floor", skillGroup: "Dance/Leaps", crTags: ["dance_passage"] },
+  { name: "Stag ring leap", value: "C", event: "Floor", skillGroup: "Dance/Leaps", crTags: ["dance_passage"] },
+  { name: "Double stag leap", value: "B", event: "Floor", skillGroup: "Dance/Leaps", crTags: ["dance_passage"] },
+  { name: "Split leap with leg change", value: "C", event: "Floor", skillGroup: "Dance/Leaps", crTags: ["dance_passage"] },
+  { name: "Split leap with 1.5/1 turn", value: "C", event: "Floor", skillGroup: "Dance/Leaps", crTags: ["dance_passage"] },
+  { name: "Popa (switch leap 1/4 turn to cross split)", value: "D", event: "Floor", skillGroup: "Dance/Leaps", crTags: ["dance_passage"] },
+  { name: "Kochetkova (switch leap 1/4 to ring)", value: "D", event: "Floor", skillGroup: "Dance/Leaps", crTags: ["dance_passage"] },
+  { name: "Onodi leap (switch leap 1/4 with 1/2 turn)", value: "E", event: "Floor", skillGroup: "Dance/Leaps", crTags: ["dance_passage"] },
+  { name: "Switch half with ring", value: "E", event: "Floor", skillGroup: "Dance/Leaps", crTags: ["dance_passage"] },
+  { name: "Cross split leap", value: "B", event: "Floor", skillGroup: "Dance/Leaps", crTags: ["dance_passage"] },
+  { name: "Fouette hop", value: "A", event: "Floor", skillGroup: "Dance/Leaps", crTags: [] },
+  
+  // More Turns  
+  { name: "5/1 turn (1800°)", value: "E", event: "Floor", skillGroup: "Dance/Leaps", crTags: [] },
+  { name: "6/1 turn (2160°)", value: "F", event: "Floor", skillGroup: "Dance/Leaps", crTags: [] },
+  { name: "L-turn 3/1 (1080°)", value: "D", event: "Floor", skillGroup: "Dance/Leaps", crTags: [] },
+  { name: "Y-turn 3/1 (1080°)", value: "E", event: "Floor", skillGroup: "Dance/Leaps", crTags: [] },
+  { name: "Illusion turn 2/1", value: "B", event: "Floor", skillGroup: "Dance/Leaps", crTags: [] },
+  { name: "Fouette turn 1/1", value: "A", event: "Floor", skillGroup: "Dance/Leaps", crTags: [] },
+  { name: "Fouette turn 2/1", value: "B", event: "Floor", skillGroup: "Dance/Leaps", crTags: [] },
+  { name: "Tuck turn 1/1", value: "A", event: "Floor", skillGroup: "Dance/Leaps", crTags: [] },
+  { name: "Tuck turn 2/1", value: "B", event: "Floor", skillGroup: "Dance/Leaps", crTags: [] },
+  { name: "Wolf turn 5/1", value: "E", event: "Floor", skillGroup: "Dance/Leaps", crTags: [] },
+  { name: "Wolf turn 6/1", value: "F", event: "Floor", skillGroup: "Dance/Leaps", crTags: [] },
+  
+  // More Forward Tumbling
+  { name: "Front salto stretched with 2.5/1 twist", value: "F", event: "Floor", skillGroup: "Forward Tumbling", crTags: ["salto_bwd_fwd", "salto_la_turn"] },
+  { name: "Front salto stretched with 3/1 twist", value: "F", event: "Floor", skillGroup: "Forward Tumbling", crTags: ["salto_bwd_fwd", "salto_la_turn"] },
+  { name: "Double front with 1/2 twist out", value: "E", event: "Floor", skillGroup: "Forward Tumbling", crTags: ["salto_bwd_fwd", "salto_double_ba"] },
+  { name: "Double front with 1/1 twist out", value: "F", event: "Floor", skillGroup: "Forward Tumbling", crTags: ["salto_bwd_fwd", "salto_double_ba"] },
+  { name: "Triple front tucked", value: "G", event: "Floor", skillGroup: "Forward Tumbling", crTags: ["salto_bwd_fwd", "salto_double_ba"] },
+  { name: "Barani (front salto with 1/2 twist)", value: "B", event: "Floor", skillGroup: "Forward Tumbling", crTags: ["salto_bwd_fwd"] },
+  { name: "Randy (front 2.5 twist)", value: "D", event: "Floor", skillGroup: "Forward Tumbling", crTags: ["salto_bwd_fwd", "salto_la_turn"] },
+  
+  // More Backward Tumbling
+  { name: "Back salto stretched with 4/1 twist", value: "F", event: "Floor", skillGroup: "Backward Tumbling", crTags: ["salto_la_turn"] },
+  { name: "Double back tucked with 1.5/1 twist", value: "E", event: "Floor", skillGroup: "Backward Tumbling", crTags: ["salto_double_ba", "salto_la_turn"] },
+  { name: "Double back tucked with 2.5/1 twist", value: "F", event: "Floor", skillGroup: "Backward Tumbling", crTags: ["salto_double_ba", "salto_la_turn"] },
+  { name: "Double back tucked with 3/1 twist", value: "G", event: "Floor", skillGroup: "Backward Tumbling", crTags: ["salto_double_ba", "salto_la_turn"] },
+  { name: "Double back stretched with 3/1 twist", value: "H", event: "Floor", skillGroup: "Backward Tumbling", crTags: ["salto_double_ba", "salto_la_turn"] },
+  { name: "Double back piked with 2/1 twist", value: "F", event: "Floor", skillGroup: "Backward Tumbling", crTags: ["salto_double_ba", "salto_la_turn"] },
+  { name: "Full-in back-out tucked", value: "E", event: "Floor", skillGroup: "Backward Tumbling", crTags: ["salto_double_ba", "salto_la_turn"] },
+  { name: "Full-in full-out tucked", value: "F", event: "Floor", skillGroup: "Backward Tumbling", crTags: ["salto_double_ba", "salto_la_turn"] },
+  { name: "Half-in half-out tucked", value: "E", event: "Floor", skillGroup: "Backward Tumbling", crTags: ["salto_double_ba"] },
+  { name: "Double layout with 1.5/1 twist (Moors)", value: "G", event: "Floor", skillGroup: "Backward Tumbling", crTags: ["salto_double_ba", "salto_la_turn"] },
+  { name: "Triple double (double-double-back tucked with 1/1 twist)", value: "I", event: "Floor", skillGroup: "Backward Tumbling", crTags: ["salto_double_ba", "salto_la_turn"] },
+  { name: "Biles II (triple double)", value: "J", event: "Floor", skillGroup: "Backward Tumbling", crTags: ["salto_double_ba", "salto_la_turn"] },
+  { name: "Back 2.5 tucked", value: "D", event: "Floor", skillGroup: "Backward Tumbling", crTags: ["salto_double_ba"] },
+  { name: "Back 2.5 stretched", value: "E", event: "Floor", skillGroup: "Backward Tumbling", crTags: ["salto_double_ba"] },
+  { name: "Gainer back tucked", value: "B", event: "Floor", skillGroup: "Backward Tumbling", crTags: [] },
+  { name: "Gainer back stretched", value: "C", event: "Floor", skillGroup: "Backward Tumbling", crTags: [] },
+  { name: "Gainer with 1/1 twist", value: "D", event: "Floor", skillGroup: "Backward Tumbling", crTags: ["salto_la_turn"] },
+  { name: "Gainer with 2/1 twist", value: "E", event: "Floor", skillGroup: "Backward Tumbling", crTags: ["salto_la_turn"] },
 ];
 
 export const allSkills = [
