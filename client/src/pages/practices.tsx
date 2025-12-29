@@ -201,6 +201,7 @@ function PracticeCard({
 export default function Practices() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPractice, setEditingPractice] = useState<Practice | null>(null);
+  const [dayFilter, setDayFilter] = useState<string>("all");
   const { toast } = useToast();
 
   const form = useForm<FormData>({
@@ -351,6 +352,17 @@ export default function Practices() {
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          <Select value={dayFilter} onValueChange={setDayFilter}>
+            <SelectTrigger className="w-36" data-testid="select-day-filter">
+              <SelectValue placeholder="Filter by day" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Days</SelectItem>
+              {DAYS_OF_WEEK.map((day) => (
+                <SelectItem key={day} value={day}>{day}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <ExportDropdown
             onExport={(format) => practices && athletes && exportPractices(practices, athletes, format)}
             disabled={!practices?.length}
@@ -634,7 +646,7 @@ export default function Practices() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {DAYS_OF_WEEK.map((day) => (
+        {(dayFilter === "all" ? DAYS_OF_WEEK : [dayFilter]).map((day) => (
           <div key={day}>
             <h3 className="font-medium mb-3 flex items-center gap-2">
               <Calendar className="h-4 w-4 text-muted-foreground" />

@@ -35,7 +35,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Award, Trash2, Edit, MoreHorizontal, X, GripVertical, Calculator, ChevronRight, Link2, Search, Unlink } from "lucide-react";
+import { Plus, Award, Trash2, Edit, MoreHorizontal, X, GripVertical, Calculator, ChevronRight, Link2, Search, Unlink, User } from "lucide-react";
 import { ExportDropdown } from "@/components/export-dropdown";
 import { exportRoutines } from "@/lib/export-utils";
 import {
@@ -214,19 +214,25 @@ function RoutineCard({
   skills,
   onEdit,
   onDelete,
+  onPreview,
 }: {
   routine: Routine;
   athlete?: Athlete;
   skills: Skill[];
   onEdit: (routine: Routine) => void;
   onDelete: (id: string) => void;
+  onPreview: (routine: Routine) => void;
 }) {
   const routineSkills = (routine.skillIds || [])
     .map((id) => skills.find((s) => s.id === id))
     .filter(Boolean) as Skill[];
 
   return (
-    <Card className="hover-elevate" data-testid={`routine-card-${routine.id}`}>
+    <Card 
+      className="hover-elevate cursor-pointer" 
+      data-testid={`routine-card-${routine.id}`}
+      onClick={() => onPreview(routine)}
+    >
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-2 mb-3">
           <div>
@@ -240,17 +246,23 @@ function RoutineCard({
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="shrink-0" data-testid={`button-routine-actions-${routine.id}`}>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="shrink-0" 
+                data-testid={`button-routine-actions-${routine.id}`}
+                onClick={(e) => e.stopPropagation()}
+              >
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onEdit(routine)}>
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(routine); }}>
                 <Edit className="h-4 w-4 mr-2" />
                 Edit
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => onDelete(routine.id)}
+                onClick={(e) => { e.stopPropagation(); onDelete(routine.id); }}
                 className="text-destructive"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
@@ -292,6 +304,7 @@ function RoutineCard({
 export default function Routines() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingRoutine, setEditingRoutine] = useState<Routine | null>(null);
+  const [previewRoutine, setPreviewRoutine] = useState<Routine | null>(null);
   const [selectedSkillIds, setSelectedSkillIds] = useState<string[]>([]);
   const [skillSearch, setSkillSearch] = useState("");
   // Track manually disabled connections (indexes where connection is broken)
@@ -841,6 +854,7 @@ export default function Routines() {
                   skills={skills}
                   onEdit={handleEdit}
                   onDelete={(id) => deleteMutation.mutate(id)}
+                  onPreview={setPreviewRoutine}
                 />
               ))}
             </div>
@@ -855,6 +869,166 @@ export default function Routines() {
           )}
         </>
       )}
+
+      {/* Preview Dialog */}
+      <Dialog open={!!previewRoutine} onOpenChange={(open) => !open && setPreviewRoutine(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {previewRoutine?.name}
+              <Badge variant="outline">{previewRoutine?.event}</Badge>
+            </DialogTitle>
+          </DialogHeader>
+          {previewRoutine && skills && (
+            <RoutinePreview 
+              routine={previewRoutine} 
+              skills={skills} 
+              athlete={athletes?.find(a => a.id === previewRoutine.athleteId)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function RoutinePreview({ routine, skills, athlete }: { routine: Routine; skills: Skill[]; athlete?: Athlete }) {
+  const routineSkills = (routine.skillIds || [])
+    .map((id) => skills.find((s) => s.id === id))
+    .filter(Boolean) as Skill[];
+  
+  const { crFulfilled, topSkills, groupBonus, groupsPresent, crBonus, crTagsPresent, connections, startValue } = calculateStartValue(routineSkills, routine.event);
+  const isVault = routine.event === "Vault";
+  const eventGroups = SKILL_GROUPS_BY_EVENT[routine.event] || [];
+  const eventCRs = CR_BY_EVENT[routine.event] || [];
+  
+  const difficultyValue = topSkills.reduce((sum, skill) => sum + getSkillNumericValue(skill), 0);
+  const cvBonus = connections.filter(c => c.isConnected).reduce((sum, c) => sum + c.bonus, 0);
+
+  return (
+    <div className="space-y-6">
+      {athlete && (
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <User className="h-4 w-4" />
+          <span>{athlete.name}</span>
+          <Badge variant="secondary" className="ml-auto">{athlete.level}</Badge>
+        </div>
+      )}
+
+      {/* Skills List */}
+      <div>
+        <h3 className="text-sm font-medium mb-3">Skills ({routineSkills.length})</h3>
+        <div className="space-y-2">
+          {routineSkills.map((skill, idx) => (
+            <div key={idx} className="flex items-center gap-2 p-2 rounded-md bg-muted/50">
+              <span className="text-xs text-muted-foreground w-6">{idx + 1}.</span>
+              <span className="flex-1">{skill.name}</span>
+              {skill.skillGroup && (
+                <Badge variant="outline" className="text-xs">{skill.skillGroup}</Badge>
+              )}
+              <Badge variant="secondary" className="font-mono">
+                {getSkillDisplayValue(skill)}
+              </Badge>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* Start Value Breakdown */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Calculator className="h-5 w-5 text-primary" />
+          <h3 className="font-semibold">Start Value Breakdown</h3>
+        </div>
+
+        {isVault ? (
+          <div className="p-4 rounded-md bg-primary/10">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold">Vault Start Value</span>
+              <span className="text-3xl font-mono font-bold text-primary">
+                {startValue.toFixed(2)}
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 rounded-md bg-muted/50">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Difficulty Value (DV)</span>
+                <Badge variant="outline" className="text-xs">Top 8</Badge>
+              </div>
+              <span className="font-mono font-semibold">{difficultyValue.toFixed(1)}</span>
+            </div>
+
+            <div className="p-3 rounded-md bg-muted/50 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">Group Bonus</span>
+                  <Badge variant="secondary" className="text-xs">{groupsPresent.length}/4</Badge>
+                </div>
+                <span className="font-mono font-semibold">+{groupBonus.toFixed(1)}</span>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {eventGroups.map((group) => (
+                  <Badge 
+                    key={group} 
+                    variant={groupsPresent.includes(group) ? "default" : "outline"}
+                    className="text-xs"
+                  >
+                    {group}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            {eventCRs.length > 0 && (
+              <div className="p-3 rounded-md bg-muted/50 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">Composition Requirements (CR)</span>
+                    <Badge variant={crFulfilled ? "default" : "secondary"} className="text-xs">
+                      {crTagsPresent.length}/4
+                    </Badge>
+                  </div>
+                  <span className="font-mono font-semibold">+{crBonus.toFixed(1)}</span>
+                </div>
+                <div className="flex flex-col gap-1">
+                  {eventCRs.map((cr) => (
+                    <div key={cr.id} className="flex items-center gap-2">
+                      <Badge 
+                        variant={crTagsPresent.includes(cr.id) ? "default" : "outline"}
+                        className="text-xs shrink-0"
+                      >
+                        {crTagsPresent.includes(cr.id) ? "Yes" : "No"}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">{cr.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between p-3 rounded-md bg-muted/50">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Connection Value (CV)</span>
+                <Badge variant="secondary" className="text-xs">
+                  {connections.filter(c => c.isConnected).length} connections
+                </Badge>
+              </div>
+              <span className="font-mono font-semibold">+{cvBonus.toFixed(1)}</span>
+            </div>
+
+            <div className="flex items-center justify-between p-4 rounded-md bg-primary/10">
+              <span className="font-semibold">Total Start Value</span>
+              <span className="text-3xl font-mono font-bold text-primary">
+                {startValue.toFixed(2)}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
