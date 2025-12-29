@@ -40,7 +40,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Plus, Award, Trash2, Edit, MoreHorizontal, X, GripVertical, Calculator, ChevronRight, Link2, Search, Unlink, User, Info } from "lucide-react";
+import { Plus, Award, Trash2, Edit, MoreHorizontal, X, GripVertical, Calculator, ChevronRight, Link2, Search, Unlink, User, Info, ChevronUp, ChevronDown } from "lucide-react";
 import { ExportDropdown } from "@/components/export-dropdown";
 import { exportRoutines } from "@/lib/export-utils";
 import {
@@ -475,6 +475,19 @@ export default function Routines() {
     setDisabledConnections(newDisabled);
   };
 
+  const moveSkill = (index: number, direction: "up" | "down") => {
+    const newIndex = direction === "up" ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= selectedSkillIds.length) return;
+    
+    const newSkillIds = [...selectedSkillIds];
+    [newSkillIds[index], newSkillIds[newIndex]] = [newSkillIds[newIndex], newSkillIds[index]];
+    setSelectedSkillIds(newSkillIds);
+    
+    // Clear disabled connections when reordering - connections will be recalculated
+    // This is the safest approach as skill adjacencies change after reordering
+    setDisabledConnections(new Set());
+  };
+
   // Count how many times each skill appears in the routine
   const getSkillCount = (skillId: string) => {
     return selectedSkillIds.filter(id => id === skillId).length;
@@ -699,7 +712,30 @@ export default function Routines() {
                                     data-testid={`selected-skill-${idx}`}
                                   >
                                     <div className="flex items-center gap-2">
-                                      <GripVertical className="h-4 w-4 text-muted-foreground" />
+                                      <div className="flex flex-col">
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-4 w-4 p-0"
+                                          onClick={() => moveSkill(idx, "up")}
+                                          disabled={idx === 0}
+                                          data-testid={`button-move-up-${idx}`}
+                                        >
+                                          <ChevronUp className="h-3 w-3" />
+                                        </Button>
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-4 w-4 p-0"
+                                          onClick={() => moveSkill(idx, "down")}
+                                          disabled={idx === selectedSkills.length - 1}
+                                          data-testid={`button-move-down-${idx}`}
+                                        >
+                                          <ChevronDown className="h-3 w-3" />
+                                        </Button>
+                                      </div>
                                       <span className="text-xs font-mono text-muted-foreground w-4">
                                         {idx + 1}
                                       </span>
@@ -1007,15 +1043,57 @@ function RoutinePreview({ routine, skills, athlete }: { routine: Routine; skills
               </div>
             )}
 
-            <div className="flex items-center justify-between p-3 rounded-md bg-muted/50">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">Connection Value (CV)</span>
-                <Badge variant="secondary" className="text-xs">
-                  {connections.filter(c => c.isConnected).length} connections
-                </Badge>
-              </div>
-              <span className="font-mono font-semibold">+{cvBonus.toFixed(1)}</span>
-            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button 
+                  className="w-full flex items-center justify-between p-3 rounded-md bg-muted/50 hover-elevate cursor-pointer text-left"
+                  data-testid="button-cv-breakdown"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">Connection Value (CV)</span>
+                    <Badge variant="secondary" className="text-xs">
+                      {connections.filter(c => c.isConnected).length} connections
+                    </Badge>
+                    <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                  </div>
+                  <span className="font-mono font-semibold">+{cvBonus.toFixed(1)}</span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80" align="start">
+                <div className="space-y-2">
+                  <h4 className="font-medium text-sm">Connection Bonuses</h4>
+                  {connections.filter(c => c.isConnected).length > 0 ? (
+                    <>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        FIG-compliant bonuses for consecutive B+ skills
+                      </p>
+                      <div className="space-y-1.5 max-h-60 overflow-y-auto">
+                        {connections.filter(c => c.isConnected).map((conn, idx) => (
+                          <div key={idx} className="flex items-center justify-between gap-2 p-1.5 rounded bg-muted/50 text-sm">
+                            <div className="flex items-center gap-2">
+                              <Link2 className="h-3 w-3 text-green-600 dark:text-green-400" />
+                              <span className="truncate">{conn.label}</span>
+                            </div>
+                            <Badge variant="secondary" className="font-mono shrink-0">
+                              +{conn.bonus.toFixed(1)}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                      <Separator className="my-2" />
+                      <div className="flex items-center justify-between font-medium">
+                        <span className="text-sm">Total CV</span>
+                        <span className="font-mono">+{cvBonus.toFixed(1)}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      No connections detected. Connect B+ skills consecutively to earn CV bonus.
+                    </p>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
 
             <div className="flex items-center justify-between p-4 rounded-md bg-primary/10">
               <span className="font-semibold">Total Start Value</span>
