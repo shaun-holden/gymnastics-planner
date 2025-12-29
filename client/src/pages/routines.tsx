@@ -35,7 +35,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Award, Trash2, Edit, MoreHorizontal, X, GripVertical, Calculator, ChevronRight, Link2 } from "lucide-react";
+import { Plus, Award, Trash2, Edit, MoreHorizontal, X, GripVertical, Calculator, ChevronRight, Link2, Search } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -285,6 +285,7 @@ export default function Routines() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingRoutine, setEditingRoutine] = useState<Routine | null>(null);
   const [selectedSkillIds, setSelectedSkillIds] = useState<string[]>([]);
+  const [skillSearch, setSkillSearch] = useState("");
   const { toast } = useToast();
 
   const form = useForm<FormData>({
@@ -311,8 +312,17 @@ export default function Routines() {
     queryKey: ["/api/skills"],
   });
 
-  // Filter skills by selected event
-  const eventSkills = skills?.filter((s) => s.event === selectedEvent) || [];
+  // Filter skills by selected event and search term
+  const eventSkills = skills?.filter((s) => {
+    if (s.event !== selectedEvent) return false;
+    if (skillSearch.trim()) {
+      const searchLower = skillSearch.toLowerCase();
+      return s.name.toLowerCase().includes(searchLower) || 
+             s.value.toLowerCase().includes(searchLower) ||
+             (s.skillGroup && s.skillGroup.toLowerCase().includes(searchLower));
+    }
+    return true;
+  }) || [];
 
   // Get selected skill objects
   const selectedSkills = selectedSkillIds
@@ -381,6 +391,7 @@ export default function Routines() {
   const handleEdit = (routine: Routine) => {
     setEditingRoutine(routine);
     setSelectedSkillIds(routine.skillIds || []);
+    setSkillSearch("");
     form.reset({
       name: routine.name,
       athleteId: routine.athleteId,
@@ -393,6 +404,7 @@ export default function Routines() {
   const handleOpenDialog = () => {
     setEditingRoutine(null);
     setSelectedSkillIds([]);
+    setSkillSearch("");
     form.reset({
       name: "",
       athleteId: athletes?.[0]?.id || "",
@@ -424,11 +436,12 @@ export default function Routines() {
     return selectedSkillIds.filter(id => id === skillId).length;
   };
 
-  // Reset selected skills when event changes
+  // Reset selected skills and search when event changes
   useEffect(() => {
     if (!editingRoutine) {
       setSelectedSkillIds([]);
     }
+    setSkillSearch("");
   }, [selectedEvent, editingRoutine]);
 
   const isLoading = routinesLoading || athletesLoading || skillsLoading;
@@ -538,6 +551,16 @@ export default function Routines() {
                       <CardDescription className="text-xs">
                         {selectedEvent} skills ({eventSkills.length})
                       </CardDescription>
+                      <div className="relative mt-2">
+                        <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Search skills..."
+                          value={skillSearch}
+                          onChange={(e) => setSkillSearch(e.target.value)}
+                          className="pl-8 h-8 text-sm"
+                          data-testid="input-skill-search"
+                        />
+                      </div>
                     </CardHeader>
                     <CardContent className="flex-1 p-0 overflow-hidden">
                       <ScrollArea className="h-[250px] px-4 pb-4">
