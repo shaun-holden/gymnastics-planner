@@ -63,7 +63,7 @@ export const CR_BY_EVENT: Record<string, readonly { id: string; label: string }[
 };
 
 // Goal Timeframes
-export const GOAL_TIMEFRAMES = ["Daily", "Weekly", "Monthly", "Quarterly", "Yearly"] as const;
+export const GOAL_TIMEFRAMES = ["Daily", "Weekly", "Monthly", "Quarterly", "Yearly", "Custom"] as const;
 export type GoalTimeframe = typeof GOAL_TIMEFRAMES[number];
 
 // Days of week
@@ -269,7 +269,9 @@ export const goals = pgTable("goals", {
   athleteId: varchar("athlete_id"), // null for team goals
   title: text("title").notNull(),
   description: text("description"),
-  timeframe: text("timeframe").notNull(), // Daily, Weekly, Monthly, Quarterly, Yearly
+  timeframe: text("timeframe").notNull(), // Daily, Weekly, Monthly, Quarterly, Yearly, or Custom
+  startDate: text("start_date"), // ISO date string for custom timeframe
+  targetDate: text("target_date"), // ISO date string for custom timeframe
   linkedSkillIds: text("linked_skill_ids").array(),
   linkedEvent: text("linked_event"),
   completed: boolean("completed").default(false),

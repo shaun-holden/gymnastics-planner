@@ -39,7 +39,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Target, Trash2, Edit, MoreHorizontal, Check, Circle } from "lucide-react";
+import { Plus, Target, Trash2, Edit, MoreHorizontal, Check, Circle, Calendar } from "lucide-react";
 import { ExportDropdown } from "@/components/export-dropdown";
 import { exportGoals } from "@/lib/export-utils";
 import {
@@ -55,12 +55,30 @@ const formSchema = z.object({
   title: z.string().min(2, "Goal title is required"),
   description: z.string().optional(),
   athleteId: z.string().optional(),
-  timeframe: z.enum(["Daily", "Weekly", "Monthly", "Quarterly", "Yearly"]),
+  timeframe: z.enum(["Daily", "Weekly", "Monthly", "Quarterly", "Yearly", "Custom"]),
+  startDate: z.string().optional(),
+  targetDate: z.string().optional(),
   linkedEvent: z.string().optional(),
   progress: z.number().min(0).max(100),
+}).refine((data) => {
+  if (data.timeframe === "Custom") {
+    return data.startDate && data.targetDate;
+  }
+  return true;
+}, {
+  message: "Start date and target date are required for custom timeframe",
+  path: ["targetDate"],
 });
 
 type FormData = z.infer<typeof formSchema>;
+
+function formatDateRange(startDate: string | null | undefined, targetDate: string | null | undefined): string {
+  if (!startDate || !targetDate) return "";
+  const start = new Date(startDate);
+  const end = new Date(targetDate);
+  const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' };
+  return `${start.toLocaleDateString(undefined, options)} - ${end.toLocaleDateString(undefined, options)}`;
+}
 
 function GoalCard({
   goal,
@@ -142,6 +160,12 @@ function GoalCard({
 
             <div className="flex items-center gap-2 mb-3 flex-wrap">
               <Badge variant="outline">{goal.timeframe}</Badge>
+              {goal.timeframe === "Custom" && goal.startDate && goal.targetDate && (
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Calendar className="h-3 w-3" />
+                  {formatDateRange(goal.startDate, goal.targetDate)}
+                </span>
+              )}
               {goal.linkedEvent && (
                 <Badge variant="secondary">{goal.linkedEvent}</Badge>
               )}
@@ -187,10 +211,14 @@ export default function Goals() {
       description: "",
       athleteId: "",
       timeframe: "Weekly",
+      startDate: "",
+      targetDate: "",
       linkedEvent: "",
       progress: 0,
     },
   });
+
+  const watchTimeframe = form.watch("timeframe");
 
   const { data: goals, isLoading: goalsLoading } = useQuery<Goal[]>({
     queryKey: ["/api/goals"],
@@ -244,6 +272,8 @@ export default function Goals() {
       ...data,
       athleteId: data.athleteId === "team" || !data.athleteId ? null : data.athleteId,
       description: data.description || null,
+      startDate: data.timeframe === "Custom" ? data.startDate : null,
+      targetDate: data.timeframe === "Custom" ? data.targetDate : null,
       linkedEvent: data.linkedEvent === "none" || !data.linkedEvent ? null : data.linkedEvent,
       linkedSkillIds: [],
       completed: false,
@@ -261,7 +291,9 @@ export default function Goals() {
       title: goal.title,
       description: goal.description || "",
       athleteId: goal.athleteId || "team",
-      timeframe: goal.timeframe as FormData["timeframe"],
+      timeframe: (goal.timeframe as FormData["timeframe"]) || "Weekly",
+      startDate: goal.startDate || "",
+      targetDate: goal.targetDate || "",
       linkedEvent: goal.linkedEvent || "none",
       progress: goal.progress || 0,
     });
@@ -275,6 +307,8 @@ export default function Goals() {
       description: "",
       athleteId: "team",
       timeframe: "Weekly",
+      startDate: "",
+      targetDate: "",
       linkedEvent: "none",
       progress: 0,
     });
@@ -422,6 +456,44 @@ export default function Goals() {
                     )}
                   />
                 </div>
+                {watchTimeframe === "Custom" && (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name="startDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Start Date</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="date"
+                              {...field}
+                              data-testid="input-goal-start-date"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="targetDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Target Date</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="date"
+                              {...field}
+                              data-testid="input-goal-target-date"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
                 <FormField
                   control={form.control}
                   name="linkedEvent"
