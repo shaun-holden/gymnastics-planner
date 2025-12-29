@@ -13,6 +13,7 @@ import {
   type InsertUser,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { allSkills } from "./seed-skills";
 
 export interface IStorage {
   // Users
@@ -71,6 +72,34 @@ export class MemStorage implements IStorage {
     this.practices = new Map();
     this.goals = new Map();
     this.routines = new Map();
+    
+    // Seed skills from FIG Code of Points synchronously
+    this.seedSkillsSync();
+  }
+
+  private seedSkillsSync(): void {
+    // Clear existing skills to prevent duplicates on restart
+    this.skills.clear();
+    
+    for (const insertSkill of allSkills) {
+      const id = randomUUID();
+      const skill: Skill = {
+        ...insertSkill,
+        id,
+        description: insertSkill.description || null,
+        vaultValue: insertSkill.vaultValue ?? null,
+        skillGroup: insertSkill.skillGroup ?? null,
+        crTags: insertSkill.crTags ?? null,
+      };
+      this.skills.set(id, skill);
+    }
+    
+    console.log(`Seeded ${this.skills.size} skills from FIG Code of Points 2025-2028`);
+    
+    // Assertion to catch regressions
+    if (this.skills.size !== allSkills.length) {
+      console.error(`Warning: Expected ${allSkills.length} skills but got ${this.skills.size}`);
+    }
   }
 
   // Users
