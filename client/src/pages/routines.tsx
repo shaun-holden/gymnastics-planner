@@ -45,7 +45,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { Routine, Skill, Athlete, InsertRoutine, ConnectionInfo } from "@shared/schema";
-import { EVENTS, SKILL_VALUE_MAP, SKILL_GROUPS_BY_EVENT, CR_BY_EVENT, calculateStartValue, calculateConnections, getSkillNumericValue } from "@shared/schema";
+import { EVENTS, SKILL_VALUE_MAP, CR_BY_EVENT, calculateStartValue, calculateConnections, getSkillNumericValue } from "@shared/schema";
 
 function getSkillDisplayValue(skill: Skill): string {
   if (skill.event === "Vault" && skill.vaultValue !== null && skill.vaultValue !== undefined) {
@@ -64,9 +64,8 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 function StartValueCalculator({ skills, event, disabledConnections = new Set<number>() }: { skills: Skill[]; event: string; disabledConnections?: Set<number> }) {
-  const { crFulfilled, topSkills, groupBonus, groupsPresent, crBonus, crTagsPresent, connections, startValue: baseStartValue } = calculateStartValue(skills, event);
+  const { crFulfilled, topSkills, crBonus, crTagsPresent, connections, startValue: baseStartValue } = calculateStartValue(skills, event);
   const isVault = event === "Vault";
-  const eventGroups = SKILL_GROUPS_BY_EVENT[event] || [];
   const eventCRs = CR_BY_EVENT[event] || [];
   
   // Filter out manually disabled connections
@@ -77,8 +76,8 @@ function StartValueCalculator({ skills, event, disabledConnections = new Set<num
     return sum + getSkillNumericValue(skill);
   }, 0);
 
-  // Calculate adjusted start value with disabled connections considered
-  const startValue = isVault ? baseStartValue : Math.round((difficultyValue + groupBonus + crBonus + cvBonus) * 100) / 100;
+  // Calculate adjusted start value with disabled connections considered (no group bonus)
+  const startValue = isVault ? baseStartValue : Math.round((difficultyValue + crBonus + cvBonus) * 100) / 100;
 
   return (
     <div className="space-y-4">
@@ -114,27 +113,6 @@ function StartValueCalculator({ skills, event, disabledConnections = new Set<num
               Counting top 8 of {skills.length} skills (highest values first)
             </p>
           )}
-
-          <div className="p-3 rounded-md bg-muted/50 space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-sm">Group Bonus</span>
-                <Badge variant="secondary" className="text-xs">{groupsPresent.length}/4 Groups</Badge>
-              </div>
-              <span className="font-mono font-medium">+{groupBonus.toFixed(1)}</span>
-            </div>
-            <div className="flex flex-wrap gap-1">
-              {eventGroups.map((group) => (
-                <Badge 
-                  key={group} 
-                  variant={groupsPresent.includes(group) ? "default" : "outline"}
-                  className="text-xs"
-                >
-                  {group}
-                </Badge>
-              ))}
-            </div>
-          </div>
 
           {eventCRs.length > 0 && (
             <div className="p-3 rounded-md bg-muted/50 space-y-2">
@@ -897,9 +875,8 @@ function RoutinePreview({ routine, skills, athlete }: { routine: Routine; skills
     .map((id) => skills.find((s) => s.id === id))
     .filter(Boolean) as Skill[];
   
-  const { crFulfilled, topSkills, groupBonus, groupsPresent, crBonus, crTagsPresent, connections, startValue } = calculateStartValue(routineSkills, routine.event);
+  const { crFulfilled, topSkills, crBonus, crTagsPresent, connections, startValue } = calculateStartValue(routineSkills, routine.event);
   const isVault = routine.event === "Vault";
-  const eventGroups = SKILL_GROUPS_BY_EVENT[routine.event] || [];
   const eventCRs = CR_BY_EVENT[routine.event] || [];
   
   const difficultyValue = topSkills.reduce((sum, skill) => sum + getSkillNumericValue(skill), 0);
@@ -960,27 +937,6 @@ function RoutinePreview({ routine, skills, athlete }: { routine: Routine; skills
                 <Badge variant="outline" className="text-xs">Top 8</Badge>
               </div>
               <span className="font-mono font-semibold">{difficultyValue.toFixed(1)}</span>
-            </div>
-
-            <div className="p-3 rounded-md bg-muted/50 space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">Group Bonus</span>
-                  <Badge variant="secondary" className="text-xs">{groupsPresent.length}/4</Badge>
-                </div>
-                <span className="font-mono font-semibold">+{groupBonus.toFixed(1)}</span>
-              </div>
-              <div className="flex flex-wrap gap-1">
-                {eventGroups.map((group) => (
-                  <Badge 
-                    key={group} 
-                    variant={groupsPresent.includes(group) ? "default" : "outline"}
-                    className="text-xs"
-                  >
-                    {group}
-                  </Badge>
-                ))}
-              </div>
             </div>
 
             {eventCRs.length > 0 && (

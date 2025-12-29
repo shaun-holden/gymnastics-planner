@@ -445,10 +445,9 @@ export function calculateStartValue(skills: Skill[], event?: string): {
     return sum + (SKILL_VALUE_MAP[skill.value as SkillValue] || 0);
   }, 0);
 
-  // Group bonus: Check which groups are represented across ALL skills in routine
-  // 0.5 points per group, max 2.0 (all 4 groups)
+  // Group tracking (for display purposes only - not included in start value)
   const groupsPresent = Array.from(new Set(skills.filter(s => s.skillGroup).map(s => s.skillGroup!)));
-  const groupBonus = Math.min(groupsPresent.length * 0.5, 2.0);
+  const groupBonus = 0; // Group bonus removed from calculation
 
   // CR bonus: Check which composition requirements are fulfilled for this event
   // 0.5 points per CR, max 2.0 (all 4 CRs) - applies to Bars, Beam, Floor
