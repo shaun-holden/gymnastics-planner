@@ -9,6 +9,8 @@ import {
   insertGoalSchema,
   insertRoutineSchema,
   insertCurriculumSchema,
+  insertLevelSchema,
+  insertGroupSchema,
 } from "@shared/schema";
 import { z } from "zod";
 
@@ -21,6 +23,109 @@ export async function registerRoutes(
   registerAuthRoutes(app);
   
   // All data routes require authentication
+  
+  // Levels CRUD
+  app.get("/api/levels", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const levels = await storage.getLevels();
+      res.json(levels);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch levels" });
+    }
+  });
+
+  app.post("/api/levels", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const parsed = insertLevelSchema.parse(req.body);
+      const level = await storage.createLevel(parsed);
+      res.status(201).json(level);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create level" });
+    }
+  });
+
+  app.patch("/api/levels/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const parsed = insertLevelSchema.partial().parse(req.body);
+      const level = await storage.updateLevel(req.params.id, parsed);
+      if (!level) {
+        return res.status(404).json({ error: "Level not found" });
+      }
+      res.json(level);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      res.status(500).json({ error: "Failed to update level" });
+    }
+  });
+
+  app.delete("/api/levels/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const success = await storage.deleteLevel(req.params.id);
+      if (!success) {
+        return res.status(404).json({ error: "Level not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete level" });
+    }
+  });
+
+  // Groups CRUD
+  app.get("/api/groups", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const groups = await storage.getGroups();
+      res.json(groups);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch groups" });
+    }
+  });
+
+  app.post("/api/groups", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const parsed = insertGroupSchema.parse(req.body);
+      const group = await storage.createGroup(parsed);
+      res.status(201).json(group);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create group" });
+    }
+  });
+
+  app.patch("/api/groups/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const parsed = insertGroupSchema.partial().parse(req.body);
+      const group = await storage.updateGroup(req.params.id, parsed);
+      if (!group) {
+        return res.status(404).json({ error: "Group not found" });
+      }
+      res.json(group);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      res.status(500).json({ error: "Failed to update group" });
+    }
+  });
+
+  app.delete("/api/groups/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const success = await storage.deleteGroup(req.params.id);
+      if (!success) {
+        return res.status(404).json({ error: "Group not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete group" });
+    }
+  });
+
   // Athletes CRUD
   app.get("/api/athletes", isAuthenticated, async (req: Request, res: Response) => {
     try {
