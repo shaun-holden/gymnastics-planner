@@ -9,7 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
-import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -17,6 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -34,7 +38,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Calendar, Clock, Trash2, Edit, MoreHorizontal } from "lucide-react";
+import { Plus, Calendar, Clock, Trash2, Edit, MoreHorizontal, Users, User, Layers } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,10 +46,22 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { Practice, Athlete, InsertPractice } from "@shared/schema";
-import { DAYS_OF_WEEK, EVENTS } from "@shared/schema";
+import { DAYS_OF_WEEK, EVENTS, PRACTICE_TARGET_TYPES } from "@shared/schema";
+
+const LEVELS = [
+  "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
+  "TOPS", "HOPES 11-12", "HOPES 13-14", "Jr. Elite", "Elite",
+  "Xcel Bronze", "Xcel Silver", "Xcel Gold", "Xcel Platinum", "Xcel Diamond", "Xcel Sapphire",
+  "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Sapphire"
+];
 
 const formSchema = z.object({
-  athleteId: z.string().min(1, "Athlete is required"),
+  title: z.string().min(1, "Title is required"),
+  description: z.string().optional(),
+  targetType: z.enum(["athletes", "level", "group", "all"]),
+  athleteIds: z.array(z.string()).optional(),
+  levels: z.array(z.string()).optional(),
+  groupName: z.string().optional(),
   dayOfWeek: z.enum(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]),
   vaultMinutes: z.number().min(0).max(180),
   barsMinutes: z.number().min(0).max(180),
@@ -71,14 +87,37 @@ function formatMinutes(minutes: number): string {
   return `${mins}m`;
 }
 
+function getTargetLabel(practice: Practice, athletes?: Athlete[]): string {
+  switch (practice.targetType) {
+    case "athletes":
+      if (practice.athleteIds && practice.athleteIds.length > 0) {
+        const names = practice.athleteIds
+          .map(id => athletes?.find(a => a.id === id)?.name || "Unknown")
+          .join(", ");
+        return names;
+      }
+      return "No athletes";
+    case "level":
+      if (practice.levels && practice.levels.length > 0) {
+        return `Level: ${practice.levels.join(", ")}`;
+      }
+      return "All levels";
+    case "group":
+      return practice.groupName || "All groups";
+    case "all":
+    default:
+      return "All Athletes";
+  }
+}
+
 function PracticeCard({
   practice,
-  athlete,
+  athletes,
   onEdit,
   onDelete,
 }: {
   practice: Practice;
-  athlete?: Athlete;
+  athletes?: Athlete[];
   onEdit: (practice: Practice) => void;
   onDelete: (id: string) => void;
 }) {
@@ -99,15 +138,21 @@ function PracticeCard({
     <Card className="hover-elevate" data-testid={`practice-card-${practice.id}`}>
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-2 mb-3">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               <Badge variant="outline">{practice.dayOfWeek}</Badge>
               <span className="text-xs text-muted-foreground font-mono">
                 {formatMinutes(totalMinutes)} total
               </span>
             </div>
-            {athlete && (
-              <p className="font-medium">{athlete.name}</p>
+            <p className="font-medium truncate">{practice.title}</p>
+            <p className="text-sm text-muted-foreground truncate">
+              {getTargetLabel(practice, athletes)}
+            </p>
+            {practice.description && (
+              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                {practice.description}
+              </p>
             )}
           </div>
           <DropdownMenu>
@@ -132,7 +177,6 @@ function PracticeCard({
           </DropdownMenu>
         </div>
 
-        {/* Time Allocation Bars */}
         <div className="space-y-2">
           {events.map((event) => (
             <div key={event.name} className="flex items-center gap-2">
@@ -160,7 +204,12 @@ export default function Practices() {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      athleteId: "",
+      title: "",
+      description: "",
+      targetType: "all",
+      athleteIds: [],
+      levels: [],
+      groupName: "",
       dayOfWeek: "Monday",
       vaultMinutes: 30,
       barsMinutes: 30,
@@ -168,6 +217,8 @@ export default function Practices() {
       floorMinutes: 30,
     },
   });
+
+  const targetType = form.watch("targetType");
 
   const { data: practices, isLoading: practicesLoading } = useQuery<Practice[]>({
     queryKey: ["/api/practices"],
@@ -217,8 +268,18 @@ export default function Practices() {
   });
 
   const onSubmit = (data: FormData) => {
-    const submitData = {
-      ...data,
+    const submitData: InsertPractice = {
+      title: data.title,
+      description: data.description || null,
+      targetType: data.targetType,
+      athleteIds: data.targetType === "athletes" ? data.athleteIds || null : null,
+      levels: data.targetType === "level" ? data.levels || null : null,
+      groupName: data.targetType === "group" ? data.groupName || null : null,
+      dayOfWeek: data.dayOfWeek,
+      vaultMinutes: data.vaultMinutes,
+      barsMinutes: data.barsMinutes,
+      beamMinutes: data.beamMinutes,
+      floorMinutes: data.floorMinutes,
       skillIds: [],
     };
     if (editingPractice) {
@@ -231,7 +292,12 @@ export default function Practices() {
   const handleEdit = (practice: Practice) => {
     setEditingPractice(practice);
     form.reset({
-      athleteId: practice.athleteId,
+      title: practice.title,
+      description: practice.description || "",
+      targetType: (practice.targetType as FormData["targetType"]) || "all",
+      athleteIds: practice.athleteIds || [],
+      levels: practice.levels || [],
+      groupName: practice.groupName || "",
       dayOfWeek: practice.dayOfWeek as FormData["dayOfWeek"],
       vaultMinutes: practice.vaultMinutes || 0,
       barsMinutes: practice.barsMinutes || 0,
@@ -244,7 +310,12 @@ export default function Practices() {
   const handleOpenDialog = () => {
     setEditingPractice(null);
     form.reset({
-      athleteId: athletes?.[0]?.id || "",
+      title: "",
+      description: "",
+      targetType: "all",
+      athleteIds: [],
+      levels: [],
+      groupName: "",
       dayOfWeek: "Monday",
       vaultMinutes: 30,
       barsMinutes: 30,
@@ -261,7 +332,6 @@ export default function Practices() {
     watchedValues.beamMinutes +
     watchedValues.floorMinutes;
 
-  // Group practices by day
   const practicesByDay = DAYS_OF_WEEK.reduce((acc, day) => {
     acc[day] = practices?.filter((p) => p.dayOfWeek === day) || [];
     return acc;
@@ -275,49 +345,109 @@ export default function Practices() {
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">Practice Plans</h1>
           <p className="text-muted-foreground mt-1">
-            Schedule practice time by event for each athlete
+            Create and schedule practice plans for athletes, levels, or groups
           </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={handleOpenDialog} disabled={!athletes?.length} data-testid="button-add-practice">
+            <Button onClick={handleOpenDialog} data-testid="button-add-practice">
               <Plus className="h-4 w-4 mr-2" />
               Create Practice
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingPractice ? "Edit Practice Plan" : "Create Practice Plan"}
               </DialogTitle>
+              <DialogDescription>
+                Create a practice plan for athletes, levels, or groups
+              </DialogDescription>
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Plan Title</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="e.g., Competition Prep, Skills Work"
+                          data-testid="input-practice-title"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description (Optional)</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Describe what this practice plan focuses on..."
+                          className="resize-none"
+                          data-testid="input-practice-description"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <div className="grid gap-4 sm:grid-cols-2">
                   <FormField
                     control={form.control}
-                    name="athleteId"
+                    name="targetType"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Athlete</FormLabel>
+                        <FormLabel>Assign To</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
-                            <SelectTrigger data-testid="select-practice-athlete">
-                              <SelectValue placeholder="Select athlete" />
+                            <SelectTrigger data-testid="select-practice-target-type">
+                              <SelectValue placeholder="Select target" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {athletes?.map((athlete) => (
-                              <SelectItem key={athlete.id} value={athlete.id}>
-                                {athlete.name}
-                              </SelectItem>
-                            ))}
+                            <SelectItem value="all">
+                              <div className="flex items-center gap-2">
+                                <Users className="h-4 w-4" />
+                                All Athletes
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="athletes">
+                              <div className="flex items-center gap-2">
+                                <User className="h-4 w-4" />
+                                Specific Athletes
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="level">
+                              <div className="flex items-center gap-2">
+                                <Layers className="h-4 w-4" />
+                                By Level
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="group">
+                              <div className="flex items-center gap-2">
+                                <Users className="h-4 w-4" />
+                                By Group
+                              </div>
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+
                   <FormField
                     control={form.control}
                     name="dayOfWeek"
@@ -344,8 +474,96 @@ export default function Practices() {
                   />
                 </div>
 
+                {targetType === "athletes" && athletes && athletes.length > 0 && (
+                  <FormField
+                    control={form.control}
+                    name="athleteIds"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Select Athletes</FormLabel>
+                        <div className="border rounded-md p-3 space-y-2 max-h-40 overflow-y-auto">
+                          {athletes.map((athlete) => (
+                            <div key={athlete.id} className="flex items-center gap-2">
+                              <Checkbox
+                                id={`athlete-${athlete.id}`}
+                                checked={field.value?.includes(athlete.id)}
+                                onCheckedChange={(checked) => {
+                                  const current = field.value || [];
+                                  if (checked) {
+                                    field.onChange([...current, athlete.id]);
+                                  } else {
+                                    field.onChange(current.filter((id) => id !== athlete.id));
+                                  }
+                                }}
+                              />
+                              <Label htmlFor={`athlete-${athlete.id}`} className="text-sm cursor-pointer">
+                                {athlete.name} ({athlete.level})
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                {targetType === "level" && (
+                  <FormField
+                    control={form.control}
+                    name="levels"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Select Levels</FormLabel>
+                        <div className="border rounded-md p-3 space-y-2 max-h-40 overflow-y-auto">
+                          {LEVELS.map((level) => (
+                            <div key={level} className="flex items-center gap-2">
+                              <Checkbox
+                                id={`level-${level}`}
+                                checked={field.value?.includes(level)}
+                                onCheckedChange={(checked) => {
+                                  const current = field.value || [];
+                                  if (checked) {
+                                    field.onChange([...current, level]);
+                                  } else {
+                                    field.onChange(current.filter((l) => l !== level));
+                                  }
+                                }}
+                              />
+                              <Label htmlFor={`level-${level}`} className="text-sm cursor-pointer">
+                                {level}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                {targetType === "group" && (
+                  <FormField
+                    control={form.control}
+                    name="groupName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Group Name</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="e.g., Team A, Competition Squad"
+                            data-testid="input-practice-group"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
                     <span className="text-sm font-medium">Event Time Allocation</span>
                     <Badge variant="secondary" className="font-mono">
                       {formatMinutes(totalMinutes)} total
@@ -407,60 +625,47 @@ export default function Practices() {
         </Dialog>
       </div>
 
-      {!athletes?.length && (
-        <Card>
-          <CardContent className="p-6 text-center text-muted-foreground">
-            <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p className="text-lg font-medium">Add athletes first</p>
-            <p className="text-sm mt-1">Create athlete profiles before scheduling practices</p>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Weekly Schedule Grid */}
-      {athletes && athletes.length > 0 && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {DAYS_OF_WEEK.map((day) => (
-            <div key={day}>
-              <h3 className="font-medium mb-3 flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                {day}
-                {practicesByDay[day].length > 0 && (
-                  <Badge variant="secondary" className="ml-auto">
-                    {practicesByDay[day].length}
-                  </Badge>
-                )}
-              </h3>
-              <div className="space-y-3">
-                {isLoading ? (
-                  <Card>
-                    <CardContent className="p-4">
-                      <Skeleton className="h-4 w-24 mb-2" />
-                      <Skeleton className="h-3 w-32" />
-                    </CardContent>
-                  </Card>
-                ) : practicesByDay[day].length > 0 ? (
-                  practicesByDay[day].map((practice) => (
-                    <PracticeCard
-                      key={practice.id}
-                      practice={practice}
-                      athlete={athletes.find((a) => a.id === practice.athleteId)}
-                      onEdit={handleEdit}
-                      onDelete={(id) => deleteMutation.mutate(id)}
-                    />
-                  ))
-                ) : (
-                  <Card className="border-dashed">
-                    <CardContent className="p-4 text-center text-muted-foreground text-sm">
-                      No practices scheduled
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {DAYS_OF_WEEK.map((day) => (
+          <div key={day}>
+            <h3 className="font-medium mb-3 flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              {day}
+              {practicesByDay[day].length > 0 && (
+                <Badge variant="secondary" className="ml-auto">
+                  {practicesByDay[day].length}
+                </Badge>
+              )}
+            </h3>
+            <div className="space-y-3">
+              {isLoading ? (
+                <Card>
+                  <CardContent className="p-4">
+                    <Skeleton className="h-4 w-24 mb-2" />
+                    <Skeleton className="h-3 w-32" />
+                  </CardContent>
+                </Card>
+              ) : practicesByDay[day].length > 0 ? (
+                practicesByDay[day].map((practice) => (
+                  <PracticeCard
+                    key={practice.id}
+                    practice={practice}
+                    athletes={athletes}
+                    onEdit={handleEdit}
+                    onDelete={(id) => deleteMutation.mutate(id)}
+                  />
+                ))
+              ) : (
+                <Card className="border-dashed">
+                  <CardContent className="p-4 text-center text-muted-foreground text-sm">
+                    No practices scheduled
+                  </CardContent>
+                </Card>
+              )}
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

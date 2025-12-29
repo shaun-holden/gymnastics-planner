@@ -238,10 +238,19 @@ export function getSkillNumericValue(skill: Skill): number {
   return SKILL_VALUE_MAP[skill.value as SkillValue] || 0;
 }
 
+// Practice Target Types
+export const PRACTICE_TARGET_TYPES = ["athletes", "level", "group", "all"] as const;
+export type PracticeTargetType = typeof PRACTICE_TARGET_TYPES[number];
+
 // Practice Plans Table
 export const practices = pgTable("practices", {
   id: varchar("id").primaryKey(),
-  athleteId: varchar("athlete_id").notNull(),
+  title: text("title").notNull(), // Name of the practice plan
+  description: text("description"), // What the plan is about
+  targetType: text("target_type").notNull().default("all"), // athletes, level, group, all
+  athleteIds: text("athlete_ids").array(), // Array of athlete IDs (when targetType is "athletes")
+  levels: text("levels").array(), // Array of levels (when targetType is "level")
+  groupName: text("group_name"), // Group name (when targetType is "group")
   dayOfWeek: text("day_of_week").notNull(),
   vaultMinutes: integer("vault_minutes").default(0),
   barsMinutes: integer("bars_minutes").default(0),
