@@ -62,8 +62,10 @@ import {
   ChevronRight,
   StickyNote,
 } from "lucide-react";
-import type { Curriculum, Skill, InsertCurriculum } from "@shared/schema";
+import type { Curriculum, Skill, InsertCurriculum, Athlete } from "@shared/schema";
 import { EVENTS, CURRICULUM_STATUSES } from "@shared/schema";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Users, User } from "lucide-react";
 
 const PROGRAMS = ["Competitive", "Recreational", "TOPS", "Xcel"] as const;
 const LEVELS = [
@@ -77,6 +79,7 @@ const formSchema = z.object({
   level: z.string().min(1, "Level is required"),
   event: z.string().min(1, "Event is required"),
   skillId: z.string().min(1, "Skill is required"),
+  athleteIds: z.array(z.string()).optional(),
   introDate: z.string().optional(),
   checkpointDate: z.string().optional(),
   masteryTargetDate: z.string().optional(),
@@ -86,6 +89,9 @@ const formSchema = z.object({
 });
 
 type FormData = z.infer<typeof formSchema>;
+
+const ASSIGNMENT_FILTERS = ["all", "unassigned", "individual"] as const;
+type AssignmentFilter = typeof ASSIGNMENT_FILTERS[number];
 
 function getStatusIcon(status: string) {
   switch (status) {
@@ -135,17 +141,26 @@ function isOverdue(targetDate: string | null | undefined, status: string): boole
 function CurriculumItemCard({
   item,
   skill,
+  athletes,
   onEdit,
   onDelete,
   onUpdateProgress,
 }: {
   item: Curriculum;
   skill?: Skill;
+  athletes?: Athlete[];
   onEdit: (item: Curriculum) => void;
   onDelete: (id: string) => void;
   onUpdateProgress: (id: string, progress: number) => void;
 }) {
   const overdue = isOverdue(item.masteryTargetDate, item.status || "Not Started");
+  
+  const assignedAthletes = useMemo(() => {
+    if (!item.athleteIds || item.athleteIds.length === 0 || !athletes) return null;
+    return item.athleteIds
+      .map((id) => athletes.find((a) => a.id === id))
+      .filter(Boolean) as Athlete[];
+  }, [item.athleteIds, athletes]);
 
   return (
     <Card
@@ -206,10 +221,25 @@ function CurriculumItemCard({
           </div>
         </div>
 
+        {assignedAthletes && assignedAthletes.length > 0 && (
+          <div className="flex items-center gap-1 mb-2 flex-wrap">
+            <User className="h-3 w-3 text-muted-foreground shrink-0" />
+            <span className="text-xs text-muted-foreground truncate">
+              {assignedAthletes.map(a => a.name).join(", ")}
+            </span>
+          </div>
+        )}
+        
         <div className="flex items-center gap-2 mb-2">
           <Badge variant={getStatusColor(item.status || "Not Started")}>
             {item.status || "Not Started"}
           </Badge>
+          {(!item.athleteIds || item.athleteIds.length === 0) && (
+            <Badge variant="outline" className="text-xs">
+              <Users className="h-3 w-3 mr-1" />
+              Group
+            </Badge>
+          )}
           <span className="text-xs font-mono ml-auto">{item.progress || 0}%</span>
         </div>
 
@@ -240,6 +270,8 @@ export default function CurriculumPage() {
   const [editingItem, setEditingItem] = useState<Curriculum | null>(null);
   const [selectedProgram, setSelectedProgram] = useState<string>("all");
   const [selectedLevel, setSelectedLevel] = useState<string>("all");
+  const [assignmentFilter, setAssignmentFilter] = useState<AssignmentFilter>("all");
+  const [selectedAthleteFilter, setSelectedAthleteFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"hierarchy" | "timeline">("hierarchy");
   const { toast } = useToast();
 
@@ -250,6 +282,7 @@ export default function CurriculumPage() {
       level: "",
       event: "",
       skillId: "",
+      athleteIds: [],
       introDate: "",
       checkpointDate: "",
       masteryTargetDate: "",
@@ -267,6 +300,10 @@ export default function CurriculumPage() {
 
   const { data: skills, isLoading: skillsLoading } = useQuery<Skill[]>({
     queryKey: ["/api/skills"],
+  });
+
+  const { data: athletes, isLoading: athletesLoading } = useQuery<Athlete[]>({
+    queryKey: ["/api/athletes"],
   });
 
   // Refresh skills cache on mount to ensure latest skills are loaded
@@ -316,6 +353,7 @@ export default function CurriculumPage() {
   const onSubmit = (data: FormData) => {
     const submitData = {
       ...data,
+      athleteIds: data.athleteIds && data.athleteIds.length > 0 ? data.athleteIds : null,
       introDate: data.introDate || null,
       checkpointDate: data.checkpointDate || null,
       masteryTargetDate: data.masteryTargetDate || null,
@@ -335,6 +373,7 @@ export default function CurriculumPage() {
       level: item.level,
       event: item.event,
       skillId: item.skillId,
+      athleteIds: item.athleteIds || [],
       introDate: item.introDate || "",
       checkpointDate: item.checkpointDate || "",
       masteryTargetDate: item.masteryTargetDate || "",
@@ -352,6 +391,7 @@ export default function CurriculumPage() {
       level: selectedLevel !== "all" ? selectedLevel : "",
       event: "",
       skillId: "",
+      athleteIds: [],
       introDate: "",
       checkpointDate: "",
       masteryTargetDate: "",
@@ -377,9 +417,15 @@ export default function CurriculumPage() {
     return curriculumItems.filter((item) => {
       if (selectedProgram !== "all" && item.program !== selectedProgram) return false;
       if (selectedLevel !== "all" && item.level !== selectedLevel) return false;
+      if (assignmentFilter === "unassigned") {
+        if (item.athleteIds && item.athleteIds.length > 0) return false;
+      } else if (assignmentFilter === "individual") {
+        if (!item.athleteIds || item.athleteIds.length === 0) return false;
+        if (selectedAthleteFilter !== "all" && !item.athleteIds.includes(selectedAthleteFilter)) return false;
+      }
       return true;
     });
-  }, [curriculumItems, selectedProgram, selectedLevel]);
+  }, [curriculumItems, selectedProgram, selectedLevel, assignmentFilter, selectedAthleteFilter]);
 
   const hierarchyData = useMemo(() => {
     const hierarchy: Record<string, Record<string, Record<string, Curriculum[]>>> = {};
@@ -422,7 +468,15 @@ export default function CurriculumPage() {
     return { total: items.length, mastered, inProgress, notStarted, overdue };
   }, [filteredItems]);
 
-  const isLoading = curriculumLoading || skillsLoading;
+  const isLoading = curriculumLoading || skillsLoading || athletesLoading;
+
+  const getAthleteNames = (athleteIds: string[] | null | undefined): string => {
+    if (!athleteIds || athleteIds.length === 0 || !athletes) return "";
+    const names = athleteIds
+      .map((id) => athletes.find((a) => a.id === id)?.name)
+      .filter(Boolean);
+    return names.join(", ");
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -541,6 +595,49 @@ export default function CurriculumPage() {
                     )}
                   />
                 </div>
+
+                <FormField
+                  control={form.control}
+                  name="athleteIds"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Assign to Athletes (Optional)</FormLabel>
+                      <div className="border rounded-md p-3 max-h-40 overflow-y-auto space-y-2">
+                        {athletes && athletes.length > 0 ? (
+                          athletes.map((athlete) => (
+                            <div key={athlete.id} className="flex items-center gap-2">
+                              <Checkbox
+                                id={`athlete-${athlete.id}`}
+                                checked={field.value?.includes(athlete.id) || false}
+                                onCheckedChange={(checked) => {
+                                  const current = field.value || [];
+                                  if (checked) {
+                                    field.onChange([...current, athlete.id]);
+                                  } else {
+                                    field.onChange(current.filter((id) => id !== athlete.id));
+                                  }
+                                }}
+                                data-testid={`checkbox-athlete-${athlete.id}`}
+                              />
+                              <label
+                                htmlFor={`athlete-${athlete.id}`}
+                                className="text-sm cursor-pointer"
+                              >
+                                {athlete.name} - {athlete.level}
+                              </label>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-sm text-muted-foreground">No athletes available. Add athletes first.</p>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Leave empty to apply to all athletes (group assignment)
+                      </p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <div className="grid gap-4 sm:grid-cols-3">
                   <FormField
@@ -742,6 +839,49 @@ export default function CurriculumPage() {
           </SelectContent>
         </Select>
 
+        <Select value={assignmentFilter} onValueChange={(v) => {
+          setAssignmentFilter(v as AssignmentFilter);
+          if (v !== "individual") setSelectedAthleteFilter("all");
+        }}>
+          <SelectTrigger className="w-44" data-testid="filter-assignment">
+            <SelectValue placeholder="All Assignments" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">
+              <span className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                All Assignments
+              </span>
+            </SelectItem>
+            <SelectItem value="unassigned">
+              <span className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Group (Unassigned)
+              </span>
+            </SelectItem>
+            <SelectItem value="individual">
+              <span className="flex items-center gap-2">
+                <User className="h-4 w-4" />
+                Individual
+              </span>
+            </SelectItem>
+          </SelectContent>
+        </Select>
+
+        {assignmentFilter === "individual" && (
+          <Select value={selectedAthleteFilter} onValueChange={setSelectedAthleteFilter}>
+            <SelectTrigger className="w-44" data-testid="filter-athlete">
+              <SelectValue placeholder="All Athletes" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Athletes</SelectItem>
+              {athletes?.map((a) => (
+                <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
         <div className="ml-auto">
           <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "hierarchy" | "timeline")}>
             <TabsList>
@@ -813,6 +953,7 @@ export default function CurriculumPage() {
                                       key={item.id}
                                       item={item}
                                       skill={skills?.find((s) => s.id === item.skillId)}
+                                      athletes={athletes}
                                       onEdit={handleEdit}
                                       onDelete={(id) => deleteMutation.mutate(id)}
                                       onUpdateProgress={handleUpdateProgress}
@@ -856,6 +997,7 @@ export default function CurriculumPage() {
                       key={item.id}
                       item={item}
                       skill={skills?.find((s) => s.id === item.skillId)}
+                      athletes={athletes}
                       onEdit={handleEdit}
                       onDelete={(id) => deleteMutation.mutate(id)}
                       onUpdateProgress={handleUpdateProgress}

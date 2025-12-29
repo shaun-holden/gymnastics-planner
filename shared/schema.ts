@@ -301,6 +301,7 @@ export const curriculum = pgTable("curriculum", {
   level: text("level").notNull(), // e.g., "Level 4", "Level 5", etc.
   event: text("event").notNull(), // Vault, Bars, Beam, Floor
   skillId: varchar("skill_id").notNull(), // Reference to skills table
+  athleteIds: text("athlete_ids").array(), // Array of athlete IDs for individual/group assignments (null = all athletes)
   introDate: text("intro_date"), // When skill should be introduced (ISO date string)
   checkpointDate: text("checkpoint_date"), // Progress checkpoint date
   masteryTargetDate: text("mastery_target_date"), // Target mastery date
