@@ -1,6 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
 import {
   insertAthleteSchema,
   insertSkillSchema,
@@ -15,6 +16,9 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  // Setup auth BEFORE registering other routes
+  await setupAuth(app);
+  registerAuthRoutes(app);
   // Athletes CRUD
   app.get("/api/athletes", async (req: Request, res: Response) => {
     try {

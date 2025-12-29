@@ -2,6 +2,9 @@ import { pgTable, text, varchar, integer, real, boolean, jsonb } from "drizzle-o
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Export auth models for Replit Auth
+export * from "./models/auth";
+
 // Competitive Systems
 export const COMPETITIVE_SYSTEMS = ["USA Gymnastics", "NGA", "AAU"] as const;
 export type CompetitiveSystem = typeof COMPETITIVE_SYSTEMS[number];
