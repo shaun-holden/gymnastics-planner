@@ -6,7 +6,7 @@ import {
   Dumbbell,
   Award,
   Target,
-  FileText,
+  BookOpen,
 } from "lucide-react";
 import {
   Sidebar,
@@ -24,6 +24,7 @@ import {
 const navigationItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Athletes", url: "/athletes", icon: Users },
+  { title: "Curriculum", url: "/curriculum", icon: BookOpen },
   { title: "Practice Plans", url: "/practices", icon: Calendar },
   { title: "Skill Banks", url: "/skills", icon: Dumbbell },
   { title: "Routines", url: "/routines", icon: Award },

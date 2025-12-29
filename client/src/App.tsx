@@ -19,6 +19,7 @@ import Skills from "@/pages/skills";
 import Practices from "@/pages/practices";
 import Routines from "@/pages/routines";
 import Goals from "@/pages/goals";
+import Curriculum from "@/pages/curriculum";
 
 function Router() {
   return (
@@ -29,6 +30,7 @@ function Router() {
       <Route path="/practices" component={Practices} />
       <Route path="/routines" component={Routines} />
       <Route path="/goals" component={Goals} />
+      <Route path="/curriculum" component={Curriculum} />
       <Route component={NotFound} />
     </Switch>
   );
