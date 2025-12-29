@@ -61,8 +61,12 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Seed skills from FIG Code of Points if database is empty
-  await storage.seedSkills();
+  try {
+    // Seed skills from FIG Code of Points if database is empty
+    await storage.seedSkills();
+  } catch (err) {
+    console.error("Error seeding skills (continuing anyway):", err);
+  }
   
   await registerRoutes(httpServer, app);
 
