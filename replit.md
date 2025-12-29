@@ -5,7 +5,7 @@ A comprehensive gymnastics lesson planning and training management application d
 
 ## Current State
 - **MVP Complete**: Core features implemented and working
-- **Data Storage**: In-memory storage (data resets on server restart)
+- **Data Storage**: PostgreSQL database with Drizzle ORM (data persists across restarts)
 - **Authentication**: Not implemented (single user mode)
 
 ## Project Structure
@@ -32,7 +32,8 @@ client/
 server/
 ├── index.ts         # Express server entry
 ├── routes.ts        # API endpoints
-├── storage.ts       # In-memory data storage
+├── storage.ts       # DatabaseStorage with PostgreSQL/Drizzle
+├── db.ts            # Database connection pool
 ├── seed-skills.ts   # FIG Code of Points 2025-2028 skill data (329 skills)
 └── vite.ts
 
@@ -141,9 +142,10 @@ The app runs on port 5000.
 - Successfully imported 329 skills from FIG Code of Points 2025-2028: 61 Vault, 73 Bars, 105 Beam, 90 Floor
 - Created seed-skills.ts with comprehensive skill data including proper values, groups, and CR tags
 - Implemented automatic skill seeding on server startup with duplicate prevention
+- Set up PostgreSQL database integration with Drizzle ORM for data persistence (Dec 29, 2025)
+- Converted storage layer from in-memory (MemStorage) to database-backed (DatabaseStorage)
 
 ## Future Enhancements
-- Database persistence (PostgreSQL)
 - Export to PDF/Excel/CSV/Word
 - User authentication
 - Multiple coaches/teams support
