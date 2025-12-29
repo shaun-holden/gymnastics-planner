@@ -33,6 +33,7 @@ server/
 ├── index.ts         # Express server entry
 ├── routes.ts        # API endpoints
 ├── storage.ts       # In-memory data storage
+├── seed-skills.ts   # FIG Code of Points 2025-2028 skill data (329 skills)
 └── vite.ts
 
 shared/
@@ -134,6 +135,9 @@ The app runs on port 5000.
 - Full CRUD for Athletes, Skills, Practices, Goals, Routines
 - Start Value calculator for Elite routines
 - Dark/Light theme toggle
+- Successfully imported 329 skills from FIG Code of Points 2025-2028: 61 Vault, 73 Bars, 105 Beam, 90 Floor
+- Created seed-skills.ts with comprehensive skill data including proper values, groups, and CR tags
+- Implemented automatic skill seeding on server startup with duplicate prevention
 
 ## Future Enhancements
 - Database persistence (PostgreSQL)
