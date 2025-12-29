@@ -84,38 +84,115 @@ export const SKILL_VALUE_MAP: Record<SkillValue, number> = {
 };
 
 // Connection Value (CV) Bonus Rules per Event (FIG Code of Points 2025-2028)
-// Each entry defines: [minValue1, minValue2, bonus]
+// Complete FIG-compliant CV rules for each apparatus
+
 export const CV_RULES_BARS = [
+  // Bars: Flight elements in series (releases, transitions)
+  // FIG Code 2025-2028 connection bonuses
   { min1: "D", min2: "D", bonus: 0.1, label: "D+D" },
-  { min1: "D", min2: "E", bonus: 0.2, label: "D+E or higher" },
-  { min1: "E", min2: "D", bonus: 0.2, label: "E+D or higher" },
-  { min1: "E", min2: "E", bonus: 0.2, label: "E+E or higher" },
+  { min1: "D", min2: "E", bonus: 0.2, label: "D+E" },
+  { min1: "E", min2: "D", bonus: 0.2, label: "E+D" },
+  { min1: "E", min2: "E", bonus: 0.2, label: "E+E" },
+  { min1: "D", min2: "F", bonus: 0.2, label: "D+F" },
+  { min1: "F", min2: "D", bonus: 0.2, label: "F+D" },
+  { min1: "E", min2: "F", bonus: 0.2, label: "E+F" },
+  { min1: "F", min2: "E", bonus: 0.2, label: "F+E" },
+  { min1: "F", min2: "F", bonus: 0.2, label: "F+F" },
+  { min1: "C", min2: "G", bonus: 0.2, label: "C+G" },
+  { min1: "G", min2: "C", bonus: 0.2, label: "G+C" },
+  { min1: "D", min2: "G", bonus: 0.2, label: "D+G" },
+  { min1: "G", min2: "D", bonus: 0.2, label: "G+D" },
+  { min1: "E", min2: "G", bonus: 0.2, label: "E+G" },
+  { min1: "G", min2: "E", bonus: 0.2, label: "G+E" },
+  { min1: "F", min2: "G", bonus: 0.2, label: "F+G" },
+  { min1: "G", min2: "F", bonus: 0.2, label: "G+F" },
+  { min1: "G", min2: "G", bonus: 0.2, label: "G+G" },
 ] as const;
 
 export const CV_RULES_BEAM = [
-  // FIG-compliant Beam connections (acro and dance treated similarly)
+  // Beam: Acrobatic and dance connections
+  // FIG Code 2025-2028 connection bonuses
+  // 0.1 bonus connections
+  { min1: "B", min2: "B", bonus: 0.1, label: "B+B" },
   { min1: "B", min2: "C", bonus: 0.1, label: "B+C" },
   { min1: "C", min2: "B", bonus: 0.1, label: "C+B" },
+  { min1: "B", min2: "D", bonus: 0.1, label: "B+D" },
+  { min1: "D", min2: "B", bonus: 0.1, label: "D+B" },
   { min1: "C", min2: "C", bonus: 0.1, label: "C+C" },
+  // 0.2 bonus connections
   { min1: "C", min2: "D", bonus: 0.2, label: "C+D" },
   { min1: "D", min2: "C", bonus: 0.2, label: "D+C" },
   { min1: "D", min2: "D", bonus: 0.2, label: "D+D" },
   { min1: "D", min2: "E", bonus: 0.2, label: "D+E" },
   { min1: "E", min2: "D", bonus: 0.2, label: "E+D" },
   { min1: "E", min2: "E", bonus: 0.2, label: "E+E" },
+  { min1: "C", min2: "E", bonus: 0.2, label: "C+E" },
+  { min1: "E", min2: "C", bonus: 0.2, label: "E+C" },
+  { min1: "B", min2: "E", bonus: 0.2, label: "B+E" },
+  { min1: "E", min2: "B", bonus: 0.2, label: "E+B" },
+  { min1: "C", min2: "F", bonus: 0.2, label: "C+F" },
+  { min1: "F", min2: "C", bonus: 0.2, label: "F+C" },
+  { min1: "D", min2: "F", bonus: 0.2, label: "D+F" },
+  { min1: "F", min2: "D", bonus: 0.2, label: "F+D" },
+  { min1: "E", min2: "F", bonus: 0.2, label: "E+F" },
+  { min1: "F", min2: "E", bonus: 0.2, label: "F+E" },
+  { min1: "F", min2: "F", bonus: 0.2, label: "F+F" },
+  { min1: "B", min2: "F", bonus: 0.2, label: "B+F" },
+  { min1: "F", min2: "B", bonus: 0.2, label: "F+B" },
+  { min1: "C", min2: "G", bonus: 0.2, label: "C+G" },
+  { min1: "G", min2: "C", bonus: 0.2, label: "G+C" },
+  { min1: "D", min2: "G", bonus: 0.2, label: "D+G" },
+  { min1: "G", min2: "D", bonus: 0.2, label: "G+D" },
+  { min1: "E", min2: "G", bonus: 0.2, label: "E+G" },
+  { min1: "G", min2: "E", bonus: 0.2, label: "G+E" },
+  { min1: "F", min2: "G", bonus: 0.2, label: "F+G" },
+  { min1: "G", min2: "F", bonus: 0.2, label: "G+F" },
+  { min1: "G", min2: "G", bonus: 0.2, label: "G+G" },
+  { min1: "B", min2: "G", bonus: 0.2, label: "B+G" },
+  { min1: "G", min2: "B", bonus: 0.2, label: "G+B" },
 ] as const;
 
 export const CV_RULES_FLOOR = [
-  // FIG-compliant Floor tumbling connections
+  // Floor: Direct acrobatic connections in tumbling lines
+  // FIG Code 2025-2028 connection bonuses
+  // 0.1 bonus connections
+  { min1: "B", min2: "B", bonus: 0.1, label: "B+B" },
   { min1: "B", min2: "C", bonus: 0.1, label: "B+C" },
   { min1: "C", min2: "B", bonus: 0.1, label: "C+B" },
+  { min1: "B", min2: "D", bonus: 0.1, label: "B+D" },
+  { min1: "D", min2: "B", bonus: 0.1, label: "D+B" },
   { min1: "C", min2: "C", bonus: 0.1, label: "C+C" },
+  // 0.2 bonus connections
   { min1: "C", min2: "D", bonus: 0.2, label: "C+D" },
   { min1: "D", min2: "C", bonus: 0.2, label: "D+C" },
   { min1: "D", min2: "D", bonus: 0.2, label: "D+D" },
   { min1: "D", min2: "E", bonus: 0.2, label: "D+E" },
   { min1: "E", min2: "D", bonus: 0.2, label: "E+D" },
   { min1: "E", min2: "E", bonus: 0.2, label: "E+E" },
+  { min1: "C", min2: "E", bonus: 0.2, label: "C+E" },
+  { min1: "E", min2: "C", bonus: 0.2, label: "E+C" },
+  { min1: "B", min2: "E", bonus: 0.2, label: "B+E" },
+  { min1: "E", min2: "B", bonus: 0.2, label: "E+B" },
+  { min1: "C", min2: "F", bonus: 0.2, label: "C+F" },
+  { min1: "F", min2: "C", bonus: 0.2, label: "F+C" },
+  { min1: "D", min2: "F", bonus: 0.2, label: "D+F" },
+  { min1: "F", min2: "D", bonus: 0.2, label: "F+D" },
+  { min1: "E", min2: "F", bonus: 0.2, label: "E+F" },
+  { min1: "F", min2: "E", bonus: 0.2, label: "F+E" },
+  { min1: "F", min2: "F", bonus: 0.2, label: "F+F" },
+  { min1: "B", min2: "F", bonus: 0.2, label: "B+F" },
+  { min1: "F", min2: "B", bonus: 0.2, label: "F+B" },
+  { min1: "C", min2: "G", bonus: 0.2, label: "C+G" },
+  { min1: "G", min2: "C", bonus: 0.2, label: "G+C" },
+  { min1: "D", min2: "G", bonus: 0.2, label: "D+G" },
+  { min1: "G", min2: "D", bonus: 0.2, label: "G+D" },
+  { min1: "E", min2: "G", bonus: 0.2, label: "E+G" },
+  { min1: "G", min2: "E", bonus: 0.2, label: "G+E" },
+  { min1: "F", min2: "G", bonus: 0.2, label: "F+G" },
+  { min1: "G", min2: "F", bonus: 0.2, label: "G+F" },
+  { min1: "G", min2: "G", bonus: 0.2, label: "G+G" },
+  { min1: "B", min2: "G", bonus: 0.2, label: "B+G" },
+  { min1: "G", min2: "B", bonus: 0.2, label: "G+B" },
 ] as const;
 
 export type ConnectionInfo = {

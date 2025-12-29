@@ -35,7 +35,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Award, Trash2, Edit, MoreHorizontal, X, GripVertical, Calculator, ChevronRight, Link2, Search } from "lucide-react";
+import { Plus, Award, Trash2, Edit, MoreHorizontal, X, GripVertical, Calculator, ChevronRight, Link2, Search, Unlink } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -61,16 +61,22 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-function StartValueCalculator({ skills, event }: { skills: Skill[]; event: string }) {
-  const { startValue, crFulfilled, cvBonus, topSkills, groupBonus, groupsPresent, crBonus, crTagsPresent, connections } = calculateStartValue(skills, event);
+function StartValueCalculator({ skills, event, disabledConnections = new Set<number>() }: { skills: Skill[]; event: string; disabledConnections?: Set<number> }) {
+  const { crFulfilled, topSkills, groupBonus, groupsPresent, crBonus, crTagsPresent, connections, startValue: baseStartValue } = calculateStartValue(skills, event);
   const isVault = event === "Vault";
   const eventGroups = SKILL_GROUPS_BY_EVENT[event] || [];
   const eventCRs = CR_BY_EVENT[event] || [];
-  const activeConnections = connections.filter(c => c.isConnected);
+  
+  // Filter out manually disabled connections
+  const activeConnections = connections.filter((c, idx) => c.isConnected && !disabledConnections.has(idx));
+  const cvBonus = activeConnections.reduce((sum, c) => sum + c.bonus, 0);
 
   const difficultyValue = topSkills.reduce((sum, skill) => {
     return sum + getSkillNumericValue(skill);
   }, 0);
+
+  // Calculate adjusted start value with disabled connections considered
+  const startValue = isVault ? baseStartValue : Math.round((difficultyValue + groupBonus + crBonus + cvBonus) * 100) / 100;
 
   return (
     <div className="space-y-4">
@@ -286,6 +292,8 @@ export default function Routines() {
   const [editingRoutine, setEditingRoutine] = useState<Routine | null>(null);
   const [selectedSkillIds, setSelectedSkillIds] = useState<string[]>([]);
   const [skillSearch, setSkillSearch] = useState("");
+  // Track manually disabled connections (indexes where connection is broken)
+  const [disabledConnections, setDisabledConnections] = useState<Set<number>>(new Set());
   const { toast } = useToast();
 
   const form = useForm<FormData>({
@@ -371,13 +379,27 @@ export default function Routines() {
   });
 
   const onSubmit = (data: FormData) => {
-    const { startValue, crFulfilled, cvBonus, groupBonus, crBonus } = calculateStartValue(selectedSkills, data.event);
+    const { crFulfilled, groupBonus, crBonus, topSkills, connections } = calculateStartValue(selectedSkills, data.event);
+    
+    // Calculate CV bonus respecting disabled connections
+    const activeConnections = connections.filter((c, idx) => c.isConnected && !disabledConnections.has(idx));
+    const cvBonus = activeConnections.reduce((sum, c) => sum + c.bonus, 0);
+    
+    // Calculate difficulty value
+    const difficultyValue = topSkills.reduce((sum, skill) => sum + getSkillNumericValue(skill), 0);
+    
+    // Calculate final start value
+    const isVault = data.event === "Vault";
+    const startValue = isVault 
+      ? (selectedSkills[0]?.vaultValue || 0)
+      : Math.round((difficultyValue + groupBonus + crBonus + cvBonus) * 100) / 100;
+    
     const submitData = {
       ...data,
       skillIds: selectedSkillIds,
       startValue,
       crFulfilled,
-      cvBonus,
+      cvBonus: Math.round(cvBonus * 100) / 100,
       groupBonus,
       crBonus,
     };
@@ -392,6 +414,7 @@ export default function Routines() {
     setEditingRoutine(routine);
     setSelectedSkillIds(routine.skillIds || []);
     setSkillSearch("");
+    setDisabledConnections(new Set());
     form.reset({
       name: routine.name,
       athleteId: routine.athleteId,
@@ -405,6 +428,7 @@ export default function Routines() {
     setEditingRoutine(null);
     setSelectedSkillIds([]);
     setSkillSearch("");
+    setDisabledConnections(new Set());
     form.reset({
       name: "",
       athleteId: athletes?.[0]?.id || "",
@@ -429,6 +453,23 @@ export default function Routines() {
   const removeSkillFromRoutine = (index: number) => {
     // Remove skill at specific index (needed for handling duplicates)
     setSelectedSkillIds(selectedSkillIds.filter((_, i) => i !== index));
+    // Adjust disabled connections when a skill is removed
+    const newDisabled = new Set<number>();
+    disabledConnections.forEach(i => {
+      if (i < index) newDisabled.add(i);
+      else if (i > index) newDisabled.add(i - 1);
+    });
+    setDisabledConnections(newDisabled);
+  };
+
+  const toggleConnection = (index: number) => {
+    const newDisabled = new Set(disabledConnections);
+    if (newDisabled.has(index)) {
+      newDisabled.delete(index);
+    } else {
+      newDisabled.add(index);
+    }
+    setDisabledConnections(newDisabled);
   };
 
   // Count how many times each skill appears in the routine
@@ -436,10 +477,11 @@ export default function Routines() {
     return selectedSkillIds.filter(id => id === skillId).length;
   };
 
-  // Reset selected skills and search when event changes
+  // Reset selected skills, search, and connections when event changes
   useEffect(() => {
     if (!editingRoutine) {
       setSelectedSkillIds([]);
+      setDisabledConnections(new Set());
     }
     setSkillSearch("");
   }, [selectedEvent, editingRoutine]);
@@ -673,19 +715,35 @@ export default function Routines() {
                                       <X className="h-3 w-3" />
                                     </Button>
                                   </div>
-                                  {/* Connection indicator between skills */}
+                                  {/* Connection indicator between skills - clickable to toggle */}
                                   {idx < selectedSkills.length - 1 && (
-                                    <div className="flex items-center justify-center py-0.5">
-                                      {connections[idx]?.isConnected ? (
-                                        <div className="flex items-center gap-1 text-xs">
-                                          <Link2 className="h-3 w-3 text-green-600 dark:text-green-400" />
-                                          <span className="text-green-600 dark:text-green-400 font-mono font-medium">
-                                            {connections[idx].label}
-                                          </span>
-                                        </div>
-                                      ) : (
-                                        <div className="w-0.5 h-2 bg-muted-foreground/20 rounded" />
-                                      )}
+                                    <div className="flex items-center justify-center py-1">
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => toggleConnection(idx)}
+                                        className="gap-1"
+                                        data-testid={`toggle-connection-${idx}`}
+                                      >
+                                        {connections[idx]?.isConnected && !disabledConnections.has(idx) ? (
+                                          <>
+                                            <Link2 className="h-3 w-3 text-green-600 dark:text-green-400" />
+                                            <span className="text-green-600 dark:text-green-400 font-mono font-medium text-xs">
+                                              {connections[idx].label}
+                                            </span>
+                                          </>
+                                        ) : disabledConnections.has(idx) ? (
+                                          <>
+                                            <Unlink className="h-3 w-3 text-muted-foreground" />
+                                            <span className="text-muted-foreground font-mono text-xs">
+                                              break
+                                            </span>
+                                          </>
+                                        ) : (
+                                          <div className="w-4 h-0.5 bg-muted-foreground/30 rounded" />
+                                        )}
+                                      </Button>
                                     </div>
                                   )}
                                 </div>
@@ -705,7 +763,7 @@ export default function Routines() {
                   {/* Start Value Calculator */}
                   <Card className="flex flex-col">
                     <CardContent className="p-4 flex-1">
-                      <StartValueCalculator skills={selectedSkills} event={selectedEvent} />
+                      <StartValueCalculator skills={selectedSkills} event={selectedEvent} disabledConnections={disabledConnections} />
                     </CardContent>
                   </Card>
                 </div>
